@@ -8,7 +8,7 @@ def test_algorithm_packages_export_core_public_apis():
         PrioritizedReplayBuffer, RainbowAgent,
     )
     from algorithms.policy_based import (
-        A2CAgent, ActorCritic, ContinuousActorCritic, PolicyNetwork,
+        A2CAgent, ActorCritic, ContinuousActorCritic, PolicyNetwork, RolloutBuffer,
         continuous_ppo_update, generalized_advantage_estimate, ppo_update,
         reinforce,
     )
@@ -28,7 +28,7 @@ def test_algorithm_packages_export_core_public_apis():
         q_learning, sarsa, td0_prediction, value_iteration,
         DQNAgent, DoubleDQNAgent, DuelingQNetwork, NStepAccumulator,
         PrioritizedReplayBuffer, RainbowAgent, A2CAgent, ActorCritic,
-        ContinuousActorCritic, PolicyNetwork, continuous_ppo_update,
+        ContinuousActorCritic, PolicyNetwork, RolloutBuffer, continuous_ppo_update,
         generalized_advantage_estimate, ppo_update, reinforce,
         DDPGAgent, SACAgent, TD3Agent, AWRAgent, ContinuousCQLAgent,
         IQLAgent, OfflineTransitionDataset, behavior_cloning_train_step,
