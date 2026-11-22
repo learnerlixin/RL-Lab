@@ -149,11 +149,14 @@ def llm_ppo_policy_step(model, optimizer, input_ids, attention_mask, completion_
     clipped = torch.clamp(ratio, 1.0 - clip_range, 1.0 + clip_range) * advantages
     per_token_loss = -torch.minimum(unclipped, clipped)
     kl_value = torch.zeros((), device=new_logps.device)
-    if reference_token_logps is not None and kl_coef:
+    if reference_token_logps is not None:
         log_ratio_ref = reference_token_logps - new_logps
         kl = torch.exp(log_ratio_ref) - log_ratio_ref - 1.0
-        per_token_loss = per_token_loss + kl_coef * kl
+        # Always report the reference KL diagnostic, but only add it to the
+        # actor objective when the caller has not already shaped rewards with KL.
         kl_value = (kl * mask).sum() / mask.sum()
+        if kl_coef:
+            per_token_loss = per_token_loss + kl_coef * kl
     loss = (per_token_loss * mask).sum() / mask.sum()
     optimizer.zero_grad()
     loss.backward()
