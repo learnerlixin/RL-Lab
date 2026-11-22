@@ -58,9 +58,12 @@ def token_level_gae(rewards, values, terminals, mask, gamma=0.99, gae_lambda=0.9
         raise ValueError("rewards must be [B,T] and values must be [B,T+1]")
     if terminals.shape != rewards.shape or mask.shape != rewards.shape:
         raise ValueError("terminals and mask must match rewards [B,T]")
-    rewards = rewards.to(device=values.device, dtype=values.dtype)
-    terminals = terminals.to(device=values.device, dtype=values.dtype)
-    mask = mask.to(device=values.device, dtype=values.dtype)
+    values = values.detach()
+    rewards = rewards.to(device=values.device, dtype=values.dtype).detach()
+    terminals = terminals.to(device=values.device, dtype=values.dtype).detach()
+    mask = mask.to(device=values.device, dtype=values.dtype).detach()
+    if ((terminals < 0) | (terminals > 1)).any():
+        raise ValueError("terminals must be binary values in [0,1]")
     if mask.sum() <= 0:
         raise ValueError("mask must contain at least one valid token")
     if not torch.isfinite(terminals).all() or not torch.isfinite(mask).all():
