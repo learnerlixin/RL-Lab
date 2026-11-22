@@ -20,6 +20,16 @@ def kl_shaped_rewards(environment_rewards, policy_logps, reference_logps,
     """
     if kl_coef < 0:
         raise ValueError("kl_coef must be nonnegative")
+    if policy_logps.shape != reference_logps.shape:
+        raise ValueError("policy_logps and reference_logps must have the same shape")
+    if completion_mask.shape != policy_logps.shape:
+        raise ValueError("completion_mask must align with token log-probabilities")
+    if environment_rewards.ndim == 1 and environment_rewards.shape[0] != policy_logps.shape[0]:
+        raise ValueError("environment_rewards batch size must match token log-probabilities")
+    if environment_rewards.ndim == 2 and environment_rewards.shape != policy_logps.shape:
+        raise ValueError("token-level environment_rewards must match token log-probabilities")
+    if environment_rewards.ndim not in (1, 2):
+        raise ValueError("environment_rewards must have shape [B] or [B, T]")
     log_ratio = policy_logps - reference_logps
     kl_estimate = torch.exp(-log_ratio) - 1.0 + log_ratio
     if environment_rewards.ndim == 1:
