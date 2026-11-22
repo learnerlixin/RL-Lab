@@ -14,6 +14,10 @@
 | LLM RL | Bradley–Terry Reward Model、DPO、token-level PPO + GAE/Value head、GRPO rollout preparation | Objective、训练步骤、批次构造、测试 |
 | 实验基础设施 | 随机种子、CSV 日志、Checkpoint、策略评估 | 工具、测试、文档 |
 
+## 公共 API
+
+常用算法可通过 `algorithms.tabular`、`algorithms.value_based`、`algorithms.policy_based`、`algorithms.policy_optimization`、`algorithms.offline_rl` 和 `algorithms.llm_rl` 导入。示例见 [`docs/30_public_api.md`](docs/30_public_api.md)。
+
 ## 项目结构
 
 - `algorithms/tabular/`：动态规划、Monte Carlo、TD prediction/control。
