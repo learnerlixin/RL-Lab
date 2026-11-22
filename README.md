@@ -11,7 +11,7 @@
 | Policy Gradient | REINFORCE、Actor-Critic、GAE、A2C、离散 PPO、连续 tanh-Gaussian PPO | 算法组件、测试、训练示例 |
 | 连续控制 | DDPG、SAC、TD3 | Agent、测试、Pendulum 示例 |
 | Offline RL | Behavior Cloning、IQL、AWR、离散 CQL、连续 CQL critic 更新 | Loss、训练步骤、数据集工具、测试 |
-| LLM RL | Bradley–Terry Reward Model、DPO、token-level PPO、GRPO | Objective、训练步骤、测试 |
+| LLM RL | Bradley–Terry Reward Model、DPO、token-level PPO + GAE/Value head、GRPO rollout preparation | Objective、训练步骤、批次构造、测试 |
 | 实验基础设施 | 随机种子、CSV 日志、Checkpoint、策略评估 | 工具、测试、文档 |
 
 ## 项目结构
@@ -21,7 +21,7 @@
 - `algorithms/policy_based/`：REINFORCE、Actor-Critic、A2C、PPO。
 - `algorithms/policy_optimization/`：DDPG、SAC、TD3。
 - `algorithms/offline_rl/`：BC、IQL、AWR、CQL 与离线 transition dataset。
-- `algorithms/llm_rl/`：Reward Model、DPO、LLM-PPO、GRPO 训练组件。
+- `algorithms/llm_rl/`：Reward Model、DPO、LLM-PPO、GRPO trainer 与 rollout packing。
 - `utils/`：reproducibility、CSV logger、checkpoint、evaluation。
 - `examples/`：可运行训练脚本。
 - `docs/`：算法推导、公式、实现边界与使用说明。
@@ -78,7 +78,7 @@ BC 示例收集一个简单控制器生成的 CartPole 演示数据；IQL 示例
 
 ## LLM RL 的边界
 
-DPO、LLM-PPO、GRPO 和 Reward Model trainer 提供可复用的目标函数或 optimizer step，不是开箱即用的 LLM 对齐框架。模型生成、tokenizer、rollout storage、奖励打分、参考模型管理、分布式调度、实验跟踪和模型评估仍需按具体模型/任务接入。GRPO 的生成与 reward scoring 由调用方负责；训练步骤处理 causal shift、completion mask、clipped objective 和可选 reference KL。
+DPO、LLM-PPO、GRPO 和 Reward Model trainer 提供可复用的目标函数或 optimizer step，不是开箱即用的 LLM 对齐框架。模型生成、tokenizer、rollout storage、奖励打分、参考模型管理、分布式调度、实验跟踪和模型评估仍需按具体模型/任务接入。GRPO 支持 callback 驱动的 group rollout 收集、prompt/completion padding、old/reference log-prob 计算和训练批次构造；模型生成策略、tokenizer 与 reward scoring 仍由调用方提供。LLM-PPO 还提供 token-level GAE 和 value head 更新；模型生成和 PPO minibatch/epoch 调度仍由调用方组织。
 
 ## 实验复现
 
