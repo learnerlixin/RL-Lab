@@ -153,6 +153,8 @@ class ContinuousCQLAgent:
                  gamma=0.99, tau=0.005, alpha=0.2,
                  conservative_weight=1.0, cql_temperature=1.0,
                  num_action_samples=10, device="cpu"):
+        if learning_rate <= 0:
+            raise ValueError("learning_rate must be positive")
         if not 0.0 <= gamma <= 1.0 or not 0.0 < tau <= 1.0:
             raise ValueError("gamma must be in [0,1] and tau in (0,1]")
         if alpha < 0 or conservative_weight < 0 or cql_temperature <= 0:
