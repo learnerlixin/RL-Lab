@@ -65,11 +65,12 @@ trainer = GRPOTrainer(
     pad_token_id=tokenizer.pad_token_id,
     reference_model=reference_model,
     kl_coef=0.02,
+    ppo_epochs=4, minibatch_size=2,
 )
 metrics = trainer.train_batch(prompt_token_ids, group_size=4)
 ```
 
-Trainer 在生成、old-policy log-prob 计算和本次更新期间统一关闭 dropout，保证 PPO ratio 的 old/new log-prob 来自相同 dropout 设置；更新结束后恢复 policy 的原始 train/eval 模式。Trainer 每个 batch 执行一次 optimizer update，旧策略 log-prob 随本次 batch 固定；如需多个 PPO epoch，应在此基础上自行实现固定 rollout 上的 minibatch schedule，不能在每次参数更新后重复把更新后的策略当作同一个 rollout 的 old policy。
+Trainer 在生成、old-policy log-prob 计算和本次更新期间统一关闭 dropout，保证 PPO ratio 的 old/new log-prob 来自相同 dropout 设置；更新结束后恢复 policy 的原始 train/eval 模式。Trainer 默认执行一个 PPO epoch，也支持通过 `ppo_epochs` 和 `minibatch_size` 在固定 rollout 上重复更新。old/reference log-prob 与 group advantages 每个 rollout 只计算一次，在所有 epoch/minibatch 之间保持固定；模型参数更新后，不能把当前策略重新算出的 log-prob 替换原有 old log-prob。
 
 
 ## 5. Hugging Face-style generate adapter
