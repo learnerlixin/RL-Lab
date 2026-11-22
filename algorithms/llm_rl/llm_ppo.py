@@ -61,6 +61,10 @@ def token_level_gae(rewards, values, terminals, mask, gamma=0.99, gae_lambda=0.9
     rewards = rewards.to(device=values.device, dtype=values.dtype)
     terminals = terminals.to(device=values.device, dtype=values.dtype)
     mask = mask.to(device=values.device, dtype=values.dtype)
+    if mask.sum() <= 0:
+        raise ValueError("mask must contain at least one valid token")
+    if not torch.isfinite(terminals).all() or not torch.isfinite(mask).all():
+        raise ValueError("terminals and mask must be finite")
     advantages = torch.zeros_like(rewards)
     gae = torch.zeros(rewards.shape[0], dtype=values.dtype, device=values.device)
     for t in reversed(range(rewards.shape[1])):
@@ -126,6 +130,10 @@ def llm_ppo_policy_step(model, optimizer, input_ids, attention_mask, completion_
         raise ValueError("advantages must have shape [B], [B,1] or [B,T]")
     if reference_token_logps is not None and reference_token_logps.shape != new_logps.shape:
         raise ValueError("reference token log-probabilities must match model output")
+    old_token_logps = old_token_logps.detach()
+    advantages = advantages.detach()
+    if reference_token_logps is not None:
+        reference_token_logps = reference_token_logps.detach()
     ratio = torch.exp(new_logps - old_token_logps)
     unclipped = ratio * advantages
     clipped = torch.clamp(ratio, 1.0 - clip_range, 1.0 + clip_range) * advantages
