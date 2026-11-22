@@ -39,3 +39,16 @@ def test_dpo_train_step_runs_and_reference_is_frozen():
                              chosen, mask, completion, rejected, mask, completion)
     assert torch.isfinite(torch.tensor(metrics["loss"]))
     assert all(not p.requires_grad or p.grad is None for p in reference.parameters())
+    assert reference.training  # original mode is restored after reference scoring
+
+
+def test_dpo_train_step_rejects_nonpositive_beta():
+    import pytest
+    policy, reference = TinyCausalLM(), TinyCausalLM()
+    optimizer = torch.optim.Adam(policy.parameters(), lr=1e-3)
+    ids = torch.tensor([[1, 2, 3]])
+    mask = torch.ones_like(ids)
+    completion = torch.tensor([[0, 0, 1]])
+    with pytest.raises(ValueError):
+        dpo_train_step(policy, reference, optimizer, 0.0,
+                       ids, mask, completion, ids, mask, completion)
