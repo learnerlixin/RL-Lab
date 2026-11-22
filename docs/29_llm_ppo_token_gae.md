@@ -25,7 +25,7 @@ A_t=\left(\delta_t+\gamma\lambda(1-d_t)A_{t+1}\right)m_t,
 
 ## 2. Value head 更新
 
-`llm_ppo_value_step` 接收 value model、optimizer、token IDs、attention mask、GAE returns 和 value mask，执行 masked MSE、梯度裁剪和 optimizer step。value model 可返回 [B,L]、[B,L,1] tensor，或暴露同形状的 values 字段。
+`llm_ppo_value_step` 接收 value model、optimizer、token IDs、attention mask、GAE returns 和 value mask，执行 masked MSE、梯度裁剪和 optimizer step。value model 可返回 [B,L]、[B,L,1] tensor，或暴露同形状的 values 字段。因果模型输出通常比 shifted policy log-prob 多一个位置；当 predictions 为 [B,T+1]、GAE returns 为 [B,T] 时，value step 会去掉最后一个 bootstrap-only prediction，再计算 masked MSE。
 
 ## 3. Actor 更新与完整循环边界
 
