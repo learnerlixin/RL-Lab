@@ -50,3 +50,8 @@ def test_iql_agent_rejects_invalid_hyperparameters():
         IQLAgent(3, 2, gamma=1.1)
     with pytest.raises(ValueError):
         IQLAgent(3, 2, expectile=1.0)
+
+def test_iql_agent_rejects_nonpositive_learning_rate():
+    import pytest
+    with pytest.raises(ValueError):
+        IQLAgent(3, 2, learning_rate=0.0)
