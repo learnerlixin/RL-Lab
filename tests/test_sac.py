@@ -19,6 +19,8 @@ def test_sac_update_runs():
     agent = SACAgent(3, 2, action_low=-1.0, action_high=1.0)
     metrics = agent.update(replay, batch_size=8)
     assert all(np.isfinite(v) for v in metrics.values())
+    assert all(parameter.grad is None for parameter in agent.q1.parameters())
+    assert all(parameter.grad is None for parameter in agent.q2.parameters())
 
 
 def test_sac_rejects_invalid_hyperparameters_and_action_bounds():
