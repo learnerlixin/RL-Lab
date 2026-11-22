@@ -55,7 +55,7 @@ R_t^{(n)}=sum_{k=0}^{n-1}gamma^k r_{t+k}
 +gamma^n(1-d_{t+n})V(s_{t+n}).
 ]
 
-本仓库已有 `n_step_return` 数值函数；采集端应使用 n-step accumulator 将连续 transition 合并后再写入 replay。遇到 episode 终止时必须 flush 队列，不能跨 episode 拼接。当前 Agent 的 `gamma` 是传入 replay transition 的折扣系数；若采集端已计算 n-step return，应将对应 bootstrap 折扣正确传递（更完整的实现可将每条 transition 的 discount 单独存储）。
+本仓库的 `NStepAccumulator` 已将连续 transition 合并后写入 PER，并为每条 replay entry 保存 `gamma^k) bootstrap discount。episode 终止时会 flush 队列且将 terminal 标志写入每个跨越终点的前缀；time-limit truncation 也会 flush，但保留非 terminal 标志以便 bootstrap。Rainbow Agent 读取逐样本 discount 做 C51 投影，因此 n-step return 已进入真实训练目标。
 
 ## 5. 训练调用
 
