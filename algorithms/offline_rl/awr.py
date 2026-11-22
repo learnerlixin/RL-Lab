@@ -120,8 +120,8 @@ class AWRAgent:
     def __init__(self, observation_dim, action_dim, action_low=-1.0,
                  action_high=1.0, hidden_dim=256, learning_rate=3e-4,
                  temperature=1.0, max_weight=20.0, device="cpu"):
-        if temperature <= 0 or max_weight <= 0:
-            raise ValueError("temperature and max_weight must be positive")
+        if learning_rate <= 0 or temperature <= 0 or max_weight <= 0:
+            raise ValueError("learning_rate, temperature and max_weight must be positive")
         from .iql import _IQLGaussianActor, _IQLValue
         self.device = torch.device(device)
         self.temperature, self.max_weight = float(temperature), float(max_weight)
