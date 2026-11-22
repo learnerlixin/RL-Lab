@@ -31,7 +31,7 @@ def test_grpo_trainer_connects_generation_packing_and_update():
     trainer = GRPOTrainer(
         policy, optimizer, generate_fn,
         reward_fn=lambda prompt, completion: float(sum(completion)),
-        pad_token_id=0, clip_range=0.2,
+        pad_token_id=0, clip_range=0.2, ppo_epochs=2, minibatch_size=1,
     )
     policy.train()
     before = policy.lm_head.weight.detach().clone()
@@ -42,6 +42,8 @@ def test_grpo_trainer_connects_generation_packing_and_update():
     assert metrics["prompt_count"] == 2
     assert metrics["group_size"] == 2
     assert metrics["reward_std"] > 0
+    assert metrics["ppo_epochs"] == 2
+    assert metrics["optimizer_steps"] == 4
     assert not torch.equal(before, policy.lm_head.weight)
 
 
@@ -56,3 +58,17 @@ def test_grpo_trainer_restores_eval_mode_when_already_evaluating():
     )
     trainer.train_batch([[1, 2]], group_size=2)
     assert policy.training is False
+
+
+def test_grpo_trainer_rejects_invalid_ppo_schedule():
+    import pytest
+    policy = DropoutCausalLM()
+    optimizer = torch.optim.Adam(policy.parameters(), lr=1e-3)
+    generate = lambda model, prompt, count: [[7 + i] for i in range(count)]
+    reward = lambda prompt, completion: float(completion[0])
+    with pytest.raises(ValueError):
+        GRPOTrainer(policy, optimizer, generate, reward, pad_token_id=0,
+                    ppo_epochs=0)
+    with pytest.raises(ValueError):
+        GRPOTrainer(policy, optimizer, generate, reward, pad_token_id=0,
+                    minibatch_size=0)
