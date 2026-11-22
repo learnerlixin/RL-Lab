@@ -26,14 +26,19 @@ Behavior Cloning (BC) 将数据集中的动作视为监督标签。离散动作�
 ```python
 from algorithms.offline_rl import OfflineTransitionDataset
 
-dataset = OfflineTransitionDataset.from_npz("dataset.npz")
-print(len(dataset), dataset[0]["observations"])
-dataset.save_npz("copy.npz")
+# D4RL-like env.get_dataset() returns a mapping of NumPy arrays.
+dataset_dict = env.get_dataset()
+dataset = OfflineTransitionDataset.from_d4rl_dataset(dataset_dict)
+
+# Or load the repository's portable NPZ format.
+dataset.save_npz("dataset.npz")
+reloaded = OfflineTransitionDataset.from_npz("dataset.npz")
+print(len(reloaded), reloaded[0]["observations"])
 ```
 
 **terminated 和 truncated 必须区分。** `terminals` 只表示环境的真实 MDP 终止；time-limit 截断写入 `timeouts`。构造 bootstrap target 时，通常只用 terminal mask 阻止 bootstrap，不能把 timeout 无条件当作真正 terminal。
 
-数据加载使用 `allow_pickle=False`。输入数组长度、维度、非有限值和二值终止标记会经过校验。对于大型数据集，此实现仍是内存数据集；更大规模场景应改用 mmap、分片存储或流式 loader。
+数据加载使用 `allow_pickle=False`。除 NPZ 文件外，`from_mapping` / `from_d4rl_dataset` 可直接导入符合 D4RL 字段约定的 mapping，无需安装 D4RL 包。输入数组长度、维度、非有限值和二值终止标记会经过校验。为避免语义歧义，必须显式提供 `terminals`，不会把混合终止信息的通用 `dones` 自动解释为 terminal。对于大型数据集，此实现仍是内存数据集；更大规模场景应改用 mmap、分片存储或流式 loader。
 
 ## 3. 连续动作 CQL
 
