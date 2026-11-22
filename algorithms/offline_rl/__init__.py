@@ -1,5 +1,5 @@
 """Offline reinforcement learning objectives, datasets and training steps."""
-from .awr import awr_policy_loss, awr_train_step, awr_value_loss, awr_weights
+from .awr import AWRAgent, awr_policy_loss, awr_train_step, awr_value_loss, awr_weights, monte_carlo_returns
 from .behavior_cloning import (
     behavior_cloning_train_step, continuous_behavior_cloning_loss,
     discrete_behavior_cloning_loss,
@@ -16,7 +16,7 @@ from .iql import (
 )
 
 __all__ = [
-    "awr_policy_loss", "awr_train_step", "awr_value_loss", "awr_weights",
+    "AWRAgent", "awr_policy_loss", "awr_train_step", "awr_value_loss", "awr_weights", "monte_carlo_returns",
     "behavior_cloning_train_step", "continuous_behavior_cloning_loss",
     "discrete_behavior_cloning_loss", "OfflineTransitionDataset",
     "continuous_cql_critic_loss", "continuous_cql_critic_step",
