@@ -36,3 +36,12 @@ def test_algorithm_packages_export_core_public_apis():
         dpo_train_step, grpo_train_step, kl_shaped_rewards,
         llm_ppo_policy_step, prepare_grpo_batch, token_level_gae,
     ))
+
+
+def test_grpo_trainer_is_publicly_exported():
+    from algorithms.llm_rl import GRPOTrainer
+    from utils import run_seed_sweep, summarize_seed_results
+
+    assert callable(GRPOTrainer)
+    assert callable(run_seed_sweep)
+    assert callable(summarize_seed_results)
