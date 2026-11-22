@@ -18,7 +18,7 @@ def test_kl_shaped_reward_places_terminal_reward_on_last_response_token():
     mask = torch.tensor([[0.0, 1.0, 1.0]])
     logps = torch.zeros(1, 3)
     rewards = kl_shaped_rewards(torch.tensor([2.0]), logps, logps, mask, kl_coef=0.0)
-    assert torch.allclose(rewards, torch.tensor([[0.0, 2.0, 0.0]]))
+    assert torch.allclose(rewards, torch.tensor([[0.0, 0.0, 2.0]]))
 
 
 def test_llm_ppo_policy_step_runs():
