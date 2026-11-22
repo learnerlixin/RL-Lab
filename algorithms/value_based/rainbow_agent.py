@@ -77,7 +77,7 @@ class RainbowAgent:
     def update(self, replay, batch_size=64, beta=0.4):
         if len(replay) < batch_size:
             return None
-        states, actions, rewards, next_states, terminals, discounts, indices, weights = replay.sample(batch_size, beta=beta)
+        states, actions, rewards, next_states, terminals, discounts, indices, weights = replay.sample(batch_size, beta=beta, include_discounts=True)
         states = torch.as_tensor(states, dtype=torch.float32, device=self.device)
         actions = torch.as_tensor(actions, dtype=torch.long, device=self.device)
         rewards = torch.as_tensor(rewards, dtype=torch.float32, device=self.device)
