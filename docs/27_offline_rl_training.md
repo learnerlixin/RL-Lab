@@ -55,9 +55,21 @@ dataset.save_npz("copy.npz")
 
 目标 Q、target network、policy action sampling、随机动作采样和 entropy/log-density 的准确计算都留给调用方，以便适配 SAC 等不同 actor-critic 结构。离散动作同样提供 `discrete_cql_critic_step`，将数据动作 TD 误差和全动作保守项组合。CQL 接口是 critic 更新组件，不是完整的离线 CQL Agent。
 
-## 4. IQL Agent 与 AWR 更新\n\n`IQLAgent` 提供连续动作 IQL 更新：双 Q target、expectile value 回归、TD critic 回归、tanh-Gaussian policy，以及按优势加权的最大似然策略更新。调用方传入 transition minibatch，字段与 `OfflineTransitionDataset` 相同。\n\n`awr_train_step` 提供通用 actor/value 两个 optimizer 的更新接口；`AWRAgent` 增加连续动作高斯策略与 value network，直接接收预先计算好的 returns。`monte_carlo_returns` 可根据顺序轨迹中的 terminal/timeout 边界计算纯 Monte-Carlo return-to-go；time-limit 处不做 bootstrap，若需要 bootstrap，需由调用方提供自定义 returns。\n\nIQL 示例：\n\n```bash\npython examples/train_iql_pendulum.py --episodes 40 --epochs 10
+## 4. IQL Agent 与 AWR 更新
+
+`IQLAgent` 提供连续动作 IQL 更新：双 Q target、expectile value 回归、TD critic 回归、tanh-Gaussian policy，以及按优势加权的最大似然策略更新。调用方传入 transition minibatch，字段与 `OfflineTransitionDataset` 相同。
+
+`awr_train_step` 提供通用 actor/value 两个 optimizer 的更新接口；`AWRAgent` 增加连续动作高斯策略与 value network，直接接收预先计算好的 returns。`monte_carlo_returns` 可根据顺序轨迹中的 terminal/timeout 边界计算纯 Monte-Carlo return-to-go；time-limit 处不做 bootstrap，若需要 bootstrap，需由调用方提供自定义 returns。
+
+IQL 示例：
+
+```bash
+python examples/train_iql_pendulum.py --episodes 40 --epochs 10
 python examples/train_cql_pendulum.py --episodes 40 --epochs 10
-python examples/train_awr_pendulum.py --episodes 40 --epochs 10\n```\n\n## 5. CartPole 端到端示例
+python examples/train_awr_pendulum.py --episodes 40 --epochs 10
+```
+
+## 5. CartPole 端到端示例
 
 ```bash
 python examples/train_bc_cartpole.py --episodes 80 --epochs 30
