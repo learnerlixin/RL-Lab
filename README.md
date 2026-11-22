@@ -20,7 +20,7 @@
 | 离线 RL | IQL expectile、Q target、advantage-weighted BC、AWR weighted regression、离散 CQL penalty | 目标函数组件 + 测试 |
 | LLM RL | Bradley–Terry loss、DPO objective | 实现 + 测试 |
 | LLM RL | token-level PPO update、KL-shaped reward、GRPO clipped objective 与组内优势 | 训练组件 + 测试 |
-| LLM RL | Masked pooling Reward Model head 与 Bradley–Terry optimizer step | 模型头 + 训练步骤 + 测试 |
+| LLM RL | Masked pooling Reward Model head 与 Bradley–Terry optimizer step | 模型头 + 训练步骤 + 测试 |\n| 实验工具 | 随机种子、CSV 指标日志、模型/优化器 checkpoint、Gymnasium 策略评估 | 工具 + 测试 |
 | LLM RL | Causal LM completion log-prob 与 DPO train step | 训练步骤 + 测试 |
 
 ## 目录
@@ -33,7 +33,7 @@
 - `algorithms/llm_rl/`：偏好优化、奖励模型头、PPO/GRPO 目标函数与训练步骤。
 - `docs/`：数学原理、公式推导、算法差异和实现边界。
 - `examples/`：小型可运行示例。
-- `tests/`：单元测试。
+- `tests/`：单元测试。\n- `utils/`：随机种子、CSV 日志、checkpoint 与策略评估。
 - `.github/workflows/`：GitHub Actions 自动测试。
 
 ## 安装与测试
@@ -64,7 +64,7 @@ python examples/train_sac_pendulum.py
 python examples/train_rainbow_cartpole.py --episodes 300
 ```
 
-## 学习顺序
+## 实验工具\n\n实验基础设施的 API、用法和边界见 [`docs/26_experiment_infrastructure.md`](docs/26_experiment_infrastructure.md)。\n\n## 学习顺序
 
 1. 阅读 `docs/01_mdp_and_bellman.md` 和 `docs/02_td_control.md`。
 2. 运行 `examples/tabular_control.py`，理解 SARSA 与 Q-learning。
@@ -86,4 +86,4 @@ python examples/train_rainbow_cartpole.py --episodes 300
 
 ## 当前限制与 Roadmap
 
-Rainbow Agent 已集成 C51、Double-DQN 动作选择、Dueling、NoisyNet 和 PER 重要性采样更新。n-step accumulator 已接入 Rainbow 的 replay 与 C51 bootstrap discount；PER 使用 O(N) 采样，适合教学而非大规模训练。连续动作 PPO 与 DDPG 均已提供 Pendulum 训练示例。仍需补齐更多离线 RL 算法、完整 GRPO rollout/trainer 适配、实验日志与 checkpoint、基准测试和消融实验。
+Rainbow Agent 已集成 C51、Double-DQN 动作选择、Dueling、NoisyNet 和 PER 重要性采样更新。n-step accumulator 已接入 Rainbow 的 replay 与 C51 bootstrap discount；PER 使用 O(N) 采样，适合教学而非大规模训练。连续动作 PPO 与 DDPG 均已提供 Pendulum 训练示例。已提供通用随机种子、CSV 日志、模型/优化器 checkpoint 与策略评估工具。仍需补齐更多离线 RL 算法、完整 GRPO rollout/trainer 适配、基准测试和消融实验。
