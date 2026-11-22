@@ -11,7 +11,7 @@ def test_n_step_accumulator_emits_full_horizon_and_discount():
     for i in range(3):
         accumulator.add(np.array([i]), 0, 1.0, np.array([i + 1]), False)
     assert len(replay) == 1
-    sample = replay.sample(1)
+    sample = replay.sample(1, include_discounts=True)
     assert np.isclose(sample[2][0], 1.75)
     assert np.isclose(sample[5][0], 0.5 ** 3)
     assert not sample[4][0]
