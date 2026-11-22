@@ -39,10 +39,13 @@ class GRPOTrainer:
         previous_mode = self.policy.training
         self.policy.eval()
         try:
+            def generate(prompt, count):
+                with torch.inference_mode():
+                    return self.generate_fn(self.policy, prompt, count)
+
             rollouts = collect_grouped_rollouts(
                 prompt_token_ids,
-                generate_fn=lambda prompt, count: self.generate_fn(
-                    self.policy, prompt, count),
+                generate_fn=generate,
                 reward_fn=self.reward_fn,
                 group_size=group_size,
             )
