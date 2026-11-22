@@ -70,3 +70,28 @@ metrics = trainer.train_batch(prompt_token_ids, group_size=4)
 ```
 
 Trainer 在生成、old-policy log-prob 计算和本次更新期间统一关闭 dropout，保证 PPO ratio 的 old/new log-prob 来自相同 dropout 设置；更新结束后恢复 policy 的原始 train/eval 模式。Trainer 每个 batch 执行一次 optimizer update，旧策略 log-prob 随本次 batch 固定；如需多个 PPO epoch，应在此基础上自行实现固定 rollout 上的 minibatch schedule，不能在每次参数更新后重复把更新后的策略当作同一个 rollout 的 old policy。
+
+
+## 5. Hugging Face-style generate adapter
+
+若模型暴露标准 `generate(input_ids, attention_mask, ...)` 方法，可以直接使用 `generate_causal_lm_completions`：
+
+```python
+from algorithms.llm_rl import GRPOTrainer, generate_causal_lm_completions
+
+trainer = GRPOTrainer(
+    policy, optimizer,
+    generate_fn=lambda model, prompt, group_size:
+        generate_causal_lm_completions(
+            model, prompt, group_size,
+            pad_token_id=tokenizer.pad_token_id,
+            eos_token_id=tokenizer.eos_token_id,
+            max_new_tokens=128,
+            generation_kwargs={"do_sample": True, "temperature": 0.8, "top_p": 0.95},
+        ),
+    reward_fn=score_completion,
+    pad_token_id=tokenizer.pad_token_id,
+)
+```
+
+Adapter 会把同一 prompt 复制成 group batch，调用 model.generate，在返回序列中移除 prompt，只保留 completion，并在首次 EOS 处截断；不依赖 Transformers import，但 model 必须提供兼容的 `generate` 方法。tokenizer 管理、EOS/PAD ID 和 reward callback 仍由调用方提供。
