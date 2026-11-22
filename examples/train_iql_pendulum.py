@@ -15,6 +15,7 @@ from utils import evaluate_policy, seed_everything
 
 
 def collect_random_dataset(env, episodes, seed):
+    env.action_space.seed(seed)
     observations, actions, rewards, next_observations, terminals, timeouts = [], [], [], [], [], []
     for episode in range(episodes):
         state, _ = env.reset(seed=seed + episode)
