@@ -171,13 +171,21 @@ class SACAgent:
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
         self.critic_optimizer.step()
+        self.critic_optimizer.zero_grad(set_to_none=True)
 
-        sampled_actions, logp, _ = self.actor.sample(states)
-        actor_q = torch.minimum(self.q1(states, sampled_actions), self.q2(states, sampled_actions))
-        actor_loss = (alpha * logp - actor_q).mean()
-        self.actor_optimizer.zero_grad()
-        actor_loss.backward()
-        self.actor_optimizer.step()
+        critic_parameters = list(self.q1.parameters()) + list(self.q2.parameters())
+        for parameter in critic_parameters:
+            parameter.requires_grad_(False)
+        try:
+            sampled_actions, logp, _ = self.actor.sample(states)
+            actor_q = torch.minimum(self.q1(states, sampled_actions), self.q2(states, sampled_actions))
+            actor_loss = (alpha * logp - actor_q).mean()
+            self.actor_optimizer.zero_grad(set_to_none=True)
+            actor_loss.backward()
+            self.actor_optimizer.step()
+        finally:
+            for parameter in critic_parameters:
+                parameter.requires_grad_(True)
 
         alpha_loss_value = 0.0
         if self.automatic_entropy:
