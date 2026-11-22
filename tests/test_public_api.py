@@ -18,7 +18,7 @@ def test_algorithm_packages_export_core_public_apis():
         behavior_cloning_train_step,
     )
     from algorithms.llm_rl import (
-        RewardModelHead, LLMPPOTrainer, bradley_terry_loss, collect_grouped_rollouts, generate_causal_lm_completions,
+        RewardModelHead, LLMPPOTrainer, LLMPPOTrainer, bradley_terry_loss, collect_grouped_rollouts, generate_causal_lm_completions,
         dpo_train_step, grpo_train_step, kl_shaped_rewards,
         llm_ppo_policy_step, prepare_grpo_batch, token_level_gae,
     )
