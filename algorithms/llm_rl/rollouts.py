@@ -93,7 +93,7 @@ def generate_causal_lm_completions(model, prompt_token_ids, group_size,
     if conflicts:
         raise ValueError(f"generation_kwargs cannot override: {sorted(conflicts)}")
     device = _model_device(model)
-    input_ids = torch.tensor([prompt] * group_size, dtype=torch.long, device=device)
+    input_ids = torch.tensor([prompt], dtype=torch.long, device=device)
     attention_mask = torch.ones_like(input_ids)
     with torch.inference_mode():
         generated = model.generate(
