@@ -10,7 +10,7 @@ from .cql import (
 )
 from .dataset import OfflineTransitionDataset
 from .iql import (
-    advantage_weighted_bc_loss, behavior_cloning_loss,
+    IQLAgent, advantage_weighted_bc_loss, behavior_cloning_loss,
     expectile_regression_loss, iql_q_target, iql_value_loss,
 )
 
@@ -20,6 +20,6 @@ __all__ = [
     "discrete_behavior_cloning_loss", "OfflineTransitionDataset",
     "continuous_cql_critic_loss", "continuous_cql_critic_step",
     "continuous_cql_penalty", "discrete_cql_penalty",
-    "advantage_weighted_bc_loss", "behavior_cloning_loss",
+    "IQLAgent", "advantage_weighted_bc_loss", "behavior_cloning_loss",
     "expectile_regression_loss", "iql_q_target", "iql_value_loss",
 ]
