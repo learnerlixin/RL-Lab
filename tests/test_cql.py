@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 from algorithms.offline_rl.cql import (
-    continuous_cql_critic_step, continuous_cql_penalty, discrete_cql_penalty,
+    continuous_cql_critic_step, continuous_cql_penalty, discrete_cql_penalty,\n    discrete_cql_critic_step,
 )
 
 
@@ -68,3 +68,24 @@ def test_continuous_cql_rejects_bad_action_shapes():
         pass
     else:
         raise AssertionError("invalid candidate-action shape should fail")
+
+
+class TinyDiscreteQ(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = nn.Linear(3, 4)
+
+    def forward(self, states):
+        return self.net(states)
+
+
+def test_discrete_cql_critic_step_updates_parameters():
+    q_network = TinyDiscreteQ()
+    optimizer = torch.optim.Adam(q_network.parameters(), lr=1e-3)
+    states = torch.randn(8, 3)
+    actions = torch.randint(0, 4, (8,))
+    targets = torch.randn(8)
+    before = q_network.net.weight.detach().clone()
+    metrics = discrete_cql_critic_step(q_network, optimizer, states, actions, targets)
+    assert torch.isfinite(torch.tensor(metrics["loss"]))
+    assert not torch.equal(before, q_network.net.weight)
