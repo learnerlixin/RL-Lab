@@ -1,4 +1,4 @@
-"""A tiny synthetic language-model RL demo: Reward Model -> DPO -> GRPO.
+"""A tiny synthetic language-model RL demo: Reward Model -> DPO -> GRPO -> LLM-PPO.
 
 This is a self-contained educational smoke example. It uses small randomly
 initialized PyTorch models and synthetic token preferences; it is not a useful
@@ -13,6 +13,7 @@ from torch import nn
 
 from algorithms.llm_rl import (
     GRPOTrainer,
+    LLMPPOTrainer,
     RewardModelHead,
     dpo_train_step,
     reward_model_train_step,
@@ -27,6 +28,17 @@ class TinyEncoder(nn.Module):
 
     def forward(self, input_ids, attention_mask):
         return SimpleNamespace(last_hidden_state=self.embedding(input_ids))
+
+
+class TinyValueModel(nn.Module):
+    def __init__(self, vocab_size=32, hidden_size=16):
+        super().__init__()
+        self.embedding = nn.Embedding(vocab_size, hidden_size)
+        self.value_head = nn.Linear(hidden_size, 1)
+
+    def forward(self, input_ids, attention_mask):
+        values = self.value_head(self.embedding(input_ids)).squeeze(-1)
+        return SimpleNamespace(values=values)
 
 
 class TinyCausalLM(nn.Module):
@@ -112,6 +124,32 @@ def run_demo(steps=20, seed=7):
     print(f"grpo loss={grpo_metrics['loss']:.4f} "
           f"reward_mean={grpo_metrics['reward_mean']:.2f} "
           f"approx_kl={grpo_metrics['approx_kl']:.4f}")
+
+    # Stage 4: token-level LLM-PPO with a separate per-token value model.
+    def generate_single(model, prompt_ids, max_new_tokens):
+        tokens = list(prompt_ids)
+        for _ in range(max_new_tokens):
+            ids = torch.tensor([tokens], dtype=torch.long, device=device)
+            mask = torch.ones_like(ids)
+            logits = model(input_ids=ids, attention_mask=mask).logits[0, -1]
+            next_token = torch.multinomial(
+                torch.softmax(logits, dim=-1), num_samples=1).item()
+            tokens.append(int(next_token))
+        return tokens[len(prompt_ids):]
+
+    value_model = TinyValueModel().to(device)
+    ppo_policy_optimizer = torch.optim.Adam(policy.parameters(), lr=1e-4)
+    value_optimizer = torch.optim.Adam(value_model.parameters(), lr=1e-3)
+    llm_ppo = LLMPPOTrainer(
+        policy, value_model, ppo_policy_optimizer, value_optimizer,
+        generate_fn=generate_single, reward_fn=reward,
+        pad_token_id=0, reference_model=reference,
+        kl_coef=0.01, ppo_epochs=1, minibatch_size=2,
+    )
+    ppo_metrics = llm_ppo.train_batch([[1, 2], [3, 4]], max_new_tokens=2)
+    print(f"llm_ppo policy_loss={ppo_metrics['policy_loss']:.4f} "
+          f"value_loss={ppo_metrics['value_loss']:.4f} "
+          f"reward_mean={ppo_metrics['reward_mean']:.2f}")
 
 
 if __name__ == "__main__":
