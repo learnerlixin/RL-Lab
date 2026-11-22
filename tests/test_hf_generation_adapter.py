@@ -50,7 +50,7 @@ def test_generation_adapter_rejects_invalid_generation_settings():
     model = FakeGenerateModel()
     with pytest.raises(ValueError):
         generate_causal_lm_completions(
-            model, [1], group_size=1, pad_token_id=0, max_new_tokens=2)
+            model, [1], group_size=0, pad_token_id=0, max_new_tokens=2)
     with pytest.raises(ValueError):
         generate_causal_lm_completions(
             model, [1], group_size=2, pad_token_id=0, max_new_tokens=2,
