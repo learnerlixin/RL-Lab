@@ -24,9 +24,12 @@ def kl_shaped_rewards(environment_rewards, policy_logps, reference_logps,
     kl_estimate = torch.exp(-log_ratio) - 1.0 + log_ratio
     if environment_rewards.ndim == 1:
         rewards = torch.zeros_like(policy_logps)
-        lengths = completion_mask.sum(dim=-1).long().clamp_min(1)
+        positions = torch.arange(rewards.shape[1], device=rewards.device).expand_as(completion_mask)
+        last_positions = torch.where(completion_mask > 0, positions, -1).max(dim=-1).values
+        if (last_positions < 0).any():
+            raise ValueError("each sequence must contain a completion token")
         rows = torch.arange(rewards.shape[0], device=rewards.device)
-        rewards[rows, lengths - 1] = environment_rewards
+        rewards[rows, last_positions] = environment_rewards
     else:
         rewards = environment_rewards
     return (rewards - kl_coef * kl_estimate) * completion_mask.to(policy_logps.dtype)
