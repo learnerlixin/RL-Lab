@@ -26,7 +26,7 @@ trainer = LLMPPOTrainer(
             pad_token_id=tokenizer.pad_token_id,
             eos_token_id=tokenizer.eos_token_id,
             max_new_tokens=max_new_tokens,
-            generation_kwargs={"do_sample": True, "temperature": 0.8},
+            generation_kwargs={"do_sample": True},
         )[0],
     reward_fn=score_completion,
     pad_token_id=tokenizer.pad_token_id,
@@ -46,7 +46,7 @@ metrics = trainer.train_batch(prompt_token_ids, max_new_tokens=128)
 - 如果 completion 含 EOS，EOS 会包含在 completion mask 内，并在 token GAE 中作为真正 terminal；达到 max_new_tokens 但未生成 EOS 时保留 bootstrap。
 - value model 必须对每个 input token 返回一个标量 state value，输出形状为 [B,L] 或 [B,L,1]。
 - policy/reference 采用 causal next-token log-prob，形状为 [B,L-1]；completion mask 会同步右移。
-- 每个 rollout 的 old/reference log-prob 与 advantages 只计算一次，多个 PPO epoch 之间保持不变。
+- 每个 rollout 的 old/reference log-prob 与 advantages 只计算一次，多个 PPO epoch 之间保持不变。old log-prob 必须对应实际行为策略分布；当前 trainer 从模型原始 softmax 计算 log-prob，因此 generation 不应额外使用 temperature/top-k/top-p 等改变概率分布的 warper，除非调用方同时实现一致的 transformed log-prob 计算。
 - generation、旧策略评分、value target 计算和策略更新期间 dropout 关闭，训练前的 train/eval 状态会在结束后恢复。
 - 支持 policy/reference/value model 位于不同 device；trainer 会按模型 device 转移输入与 target tensor。
 
