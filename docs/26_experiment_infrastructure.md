@@ -25,7 +25,7 @@ with CSVLogger("runs/metrics.csv", ["step", "episode_return"]) as logger:
     logger.log({"step": 1000, "episode_return": 42.0})
 ```
 
-字段必须与初始化时的 schema 完全一致，避免不同训练阶段悄悄写入结构不一致的数据。
+字段必须与初始化时的 schema 完全一致，避免不同训练阶段悄悄写入结构不一致的数据。若以追加模式打开已有 CSV，logger 会先核对现有 header；字段不一致时直接报错，不会把不同 schema 的记录混入同一个文件。
 
 ## 3. 模型与优化器 Checkpoint
 
@@ -41,7 +41,7 @@ state = load_checkpoint("runs/latest.pt", model, optimizer,
 print(state["step"], state["metadata"])
 ```
 
-恢复 RNG 需要显式传入 `restore_rng=True`。Checkpoint 文件应只加载可信来源；PyTorch checkpoint 本质上是序列化数据，不应随意加载陌生文件。
+恢复 RNG 需要显式传入 `restore_rng=True`。Checkpoint 写入会先保存到同目录临时文件，再通过原子替换更新目标文件，减少训练中断时破坏旧 checkpoint 的风险。Checkpoint 文件应只加载可信来源；PyTorch checkpoint 本质上是序列化数据，不应随意加载陌生文件。
 
 ## 4. 策略评估
 
