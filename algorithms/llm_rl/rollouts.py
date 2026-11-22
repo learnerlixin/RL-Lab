@@ -79,8 +79,8 @@ def generate_causal_lm_completions(model, prompt_token_ids, group_size,
     """
     if not hasattr(model, "generate"):
         raise TypeError("model must expose a generate method")
-    if group_size < 2 or max_new_tokens < 1:
-        raise ValueError("group_size must be >=2 and max_new_tokens positive")
+    if group_size < 1 or max_new_tokens < 1:
+        raise ValueError("group_size and max_new_tokens must be positive")
     prompt = [int(token) for token in prompt_token_ids]
     if not prompt:
         raise ValueError("prompt_token_ids must be non-empty")
