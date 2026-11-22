@@ -102,7 +102,7 @@ python examples/tiny_llm_rl_pipeline.py --steps 20
 
 ## LLM RL 的边界
 
-DPO、LLM-PPO、GRPO 和 Reward Model trainer 提供可复用的目标函数或 optimizer step，不是开箱即用的 LLM 对齐框架。模型生成、tokenizer、rollout storage、奖励打分、参考模型管理、分布式调度、实验跟踪和模型评估仍需按具体模型/任务接入。GRPO 支持 callback 驱动的 group rollout 收集、prompt/completion padding、old/reference log-prob 计算、批次构造与一步式 GRPOTrainer；模型生成策略、tokenizer 与 reward scoring 仍由调用方提供。LLM-PPO 还提供 token-level GAE 和 value head 更新；模型生成和 PPO minibatch/epoch 调度仍由调用方组织。
+DPO、LLM-PPO、GRPO 和 Reward Model trainer 提供可复用的目标函数或 optimizer step，不是开箱即用的 LLM 对齐框架。模型生成、tokenizer、rollout storage、奖励打分、参考模型管理、分布式调度、实验跟踪和模型评估仍需按具体模型/任务接入。GRPO 支持 callback 驱动的 group rollout 收集、prompt/completion padding、old/reference log-prob 计算、批次构造与一步式 GRPOTrainer；模型生成策略、tokenizer 与 reward scoring 仍由调用方提供。LLM-PPO 提供 token-level GAE、value head 更新和 LLMPPOTrainer，可把 callback generation/reward、KL shaping、GAE、critic/actor 多 epoch minibatch 更新串成单批训练流程。
 
 ## 实验复现
 
@@ -110,4 +110,4 @@ DPO、LLM-PPO、GRPO 和 Reward Model trainer 提供可复用的目标函数或 
 
 ## 实现原则与后续工作
 
-本仓库以教学实现和模块化训练组件为主，不把简化实现称为论文级或工业级复现。新增 A2C 端到端脚本示例会统一使用 rollout buffer、CSV 日志、独立评估环境与 checkpoint。后续仍值得持续加强：标准离线 benchmark 数据接入、完整在线/离线算法对照实验、真实模型生成与 reward pipeline 的端到端编排、分布式训练、超参数 sweep 与消融测试。
+本仓库以教学实现和模块化训练组件为主，不把简化实现称为论文级或工业级复现。新增 A2C 端到端脚本示例会统一使用 rollout buffer、CSV 日志、独立评估环境与 checkpoint。后续仍值得持续加强：标准离线 benchmark 数据接入、完整在线/离线算法对照实验、分布式 rollout、真实模型生成与 reward service 的生产级编排、分布式训练、超参数 sweep 与消融测试。
