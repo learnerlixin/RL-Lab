@@ -39,8 +39,9 @@ def test_generation_adapter_batches_prompt_and_stops_at_eos():
         generation_kwargs={"do_sample": True, "temperature": 0.8},
     )
     assert completions == [[4, 9], [5, 6, 7], [8, 9]]
-    assert model.seen["input_shape"] == (3, 2)
-    assert model.seen["attention"].tolist() == [[1, 1], [1, 1], [1, 1]]
+    # generate expands this single prompt to num_return_sequences outputs.
+    assert model.seen["input_shape"] == (1, 2)
+    assert model.seen["attention"].tolist() == [[1, 1]]
     assert model.seen["kwargs"] == {"do_sample": True, "temperature": 0.8}
 
 
