@@ -15,7 +15,11 @@ def test_grpo_mask_ignores_padding_tokens():
     mask = torch.tensor([[1.0, 1.0, 0.0]])
     adv = torch.tensor([1.0])
     loss = grpo_clipped_loss(new, old, adv, mask)
-    changed_padding = grpo_clipped_loss(new, old, adv, mask)
+    changed_new = new.clone()
+    changed_old = old.clone()
+    changed_new[0, 2] = 100.0
+    changed_old[0, 2] = -100.0
+    changed_padding = grpo_clipped_loss(changed_new, changed_old, adv, mask)
     assert torch.allclose(loss, changed_padding)
 
 
