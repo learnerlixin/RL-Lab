@@ -27,3 +27,14 @@ def test_continuous_ppo_update_runs():
                                     advantages, epochs=2, batch_size=8)
     assert set(metrics) == {"policy_loss", "value_loss", "entropy"}
     assert all(torch.isfinite(torch.tensor(v)) for v in metrics.values())
+
+def test_continuous_ppo_rejects_negative_loss_coefficients():
+    import pytest
+    model = ContinuousActorCritic(3, 1, hidden_dim=16)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    states = torch.randn(2, 3)
+    with torch.no_grad():
+        actions, logps, values = model.act(states)
+    with pytest.raises(ValueError):
+        continuous_ppo_update(model, optimizer, states, actions, logps,
+                              values, torch.ones(2), entropy_coef=-0.1)
