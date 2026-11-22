@@ -1,36 +1,70 @@
 # RL-Lab：强化学习与大模型强化学习实践
 
-从 MDP、动态规划到深度强化学习，再到 LLM post-training。项目以可读的最小实现、数学推导和可复现实验为目标；教学简化版会明确标注，不冒充工业级复现。
+一个以 Python / PyTorch 为主的强化学习学习仓库：从 MDP 和表格型算法，逐步进入深度强化学习与 LLM preference optimization。优先保证公式、实现、测试三者能互相对应。
 
-## 学习路线
-1. 基础：MDP、回报、价值函数、Bellman 方程。
-2. 表格型：DP、Monte Carlo、TD、SARSA、Q-learning。
-3. 深度价值：DQN、Double DQN、Dueling DQN、Rainbow。
-4. 策略梯度：REINFORCE、Actor-Critic、GAE。
-5. 策略优化：TRPO、PPO、SAC、TD3。
-6. 离线/模型式：BC、IQL、CQL、Dyna。
-7. LLM RL：Reward Model、RLHF、PPO、DPO、GRPO、RLAIF。
+## 当前已实现
+
+| 模块 | 算法 / 组件 | 状态 |
+|---|---|---|
+| 基础 | MDP、Bellman 方程 | 文档 |
+| 表格型 | Policy Evaluation、Policy Iteration、Value Iteration | 实现 + 测试 |
+| 表格型 | First-visit Monte Carlo、TD(0) prediction | 实现 + 测试 |
+| 表格型 | epsilon-greedy、SARSA、Q-learning | 实现 + 测试 |
+| 深度价值 | DQN、Replay Buffer、Target Network | 实现 + 测试 |
+| 深度价值 | Double DQN、Dueling 网络、Prioritized Replay primitives | 实现 + 测试 |
+| 策略梯度 | REINFORCE、Actor-Critic、GAE | 实现 + 测试 |
+| 策略优化 | 离散动作 PPO minibatch update | 实现 + 测试 |
+| LLM RL | Bradley–Terry loss、DPO objective | 实现 + 测试 |
+| LLM RL | PPO clipped objective、GRPO clipped objective、组内优势 | 目标函数组件 + 测试 |
+| LLM RL | Masked pooling Reward Model head | 模型头组件 + 测试 |
 
 ## 目录
-- algorithms/tabular：DP、MC、TD prediction/control。
-- algorithms/value_based：DQN。
-- algorithms/policy_based：策略梯度。
-- algorithms/llm_rl：偏好优化目标函数。
-- docs：原理、公式、推导、边界与风险。
-- examples：小型可运行实验；tests：单元测试。
 
-## 安装
+- `algorithms/tabular/`：动态规划、Monte Carlo、TD prediction/control。
+- `algorithms/value_based/`：DQN 与扩展 DQN 组件。
+- `algorithms/policy_based/`：REINFORCE、Actor-Critic、GAE、PPO。
+- `algorithms/llm_rl/`：偏好优化、奖励模型头、PPO/GRPO 目标函数。
+- `docs/`：数学原理、公式推导、算法差异和实现边界。
+- `examples/`：小型可运行示例。
+- `tests/`：单元测试。
+- `.github/workflows/`：GitHub Actions 自动测试。
+
+## 安装与测试
+
 建议 Python 3.10+。
+
 ```bash
 python -m venv .venv
-# macOS/Linux: source .venv/bin/activate
-# Windows: .venv\\Scripts\\Activate.ps1
+# macOS/Linux
+source .venv/bin/activate
+# Windows PowerShell
+# .venv\\Scripts\\Activate.ps1
+
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 pytest -q
 ```
 
-## LLM 强化学习概念边界
-SFT 是监督微调，不等于 RL。RLHF 常见流程包含偏好数据、奖励模型和策略优化。DPO 从偏好对直接构造目标，不要求显式在线 PPO loop。GRPO 常见做法是对同一 prompt 的多个 completion 构造组内相对优势。完整系统仍涉及采样、token mask、KL 约束、长度处理、评估和安全问题。
+## 学习顺序
 
-## 教程规范
-每种算法按问题定义 → 数学目标 → 公式推导 → 核心代码 → 实验 → 局限性展开。未实现内容不会标成已完成。
+1. 阅读 `docs/01_mdp_and_bellman.md` 和 `docs/02_td_control.md`。
+2. 运行 `examples/tabular_control.py`，理解 SARSA 与 Q-learning。
+3. 学习 DP、MC、TD，再阅读 DQN 与 Double DQN。
+4. 从 REINFORCE 过渡到 Actor-Critic、GAE 和 PPO。
+5. 阅读 LLM 偏好优化文档，理解 Reward Model、DPO、PPO、GRPO 的联系与区别。
+
+## LLM 强化学习的重要边界
+
+- SFT 是监督微调，不等同于强化学习。
+- RLHF 是一类训练流程；Reward Model 是奖励建模组件，PPO 是可能采用的策略优化方法。
+- DPO 直接从偏好对构造目标，不要求显式在线 PPO 训练循环。
+- GRPO 通常使用同一 prompt 下多个 completion 的组内相对优势。
+- 这里的 PPO/GRPO 是可复用的目标函数或优化组件，并非开箱即用的大模型训练框架。完整训练还需要 tokenizer、模型生成、rollout storage、奖励管线、分布式训练、checkpoint、评测与安全审查。
+
+## 实现原则
+
+每个算法尽量遵循：问题定义 → 数学目标 → 公式推导 → 核心实现 → 单元测试 → 实验与局限。任何简化都会在文档中说明，不把教学实现包装成论文级或工业级复现。
+
+## Roadmap
+
+后续扩展方向包括 SAC / TD3、更多离线 RL 方法、完整连续动作 PPO/SAC 训练示例、偏好数据训练管线、LLM rollout 训练框架适配、算法基准实验和消融分析。
