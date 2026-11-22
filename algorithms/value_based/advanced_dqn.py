@@ -1,6 +1,5 @@
 """Double DQN, dueling heads, and proportional prioritized replay primitives."""
 from collections import deque
-import random
 import numpy as np
 import torch
 from torch import nn
@@ -31,10 +30,7 @@ def double_dqn_targets(rewards, terminals, next_online_q, next_target_q, gamma):
 
 
 class PrioritizedReplayBuffer:
-    """Simple O(N) proportional PER reference implementation.
-
-    For large-scale use, replace the linear probability calculation with a sum tree.
-    """
+    """O(N) proportional PER; supports per-transition bootstrap discounts."""
     def __init__(self, capacity=100_000, alpha=0.6, eps=1e-6):
         if capacity <= 0 or alpha < 0 or eps <= 0:
             raise ValueError("invalid replay buffer configuration")
@@ -43,10 +39,11 @@ class PrioritizedReplayBuffer:
         self.priorities = np.zeros(capacity, dtype=np.float64)
         self.position = 0
 
-    def add(self, state, action, reward, next_state, terminated):
+    def add(self, state, action, reward, next_state, terminated, discount=None):
         max_priority = self.priorities[:len(self.data)].max() if self.data else 1.0
         transition = (np.asarray(state, dtype=np.float32), int(action), float(reward),
-                      np.asarray(next_state, dtype=np.float32), float(terminated))
+                      np.asarray(next_state, dtype=np.float32), float(terminated),
+                      None if discount is None else float(discount))
         if len(self.data) < self.capacity:
             self.data.append(transition)
         else:
@@ -63,17 +60,59 @@ class PrioritizedReplayBuffer:
         weights = (len(self.data) * probabilities[indices]) ** (-beta)
         weights /= weights.max()
         batch = [self.data[i] for i in indices]
-        states, actions, rewards, next_states, terminals = zip(*batch)
+        states, actions, rewards, next_states, terminals, discounts = zip(*batch)
         return (np.stack(states), np.asarray(actions), np.asarray(rewards, dtype=np.float32),
                 np.stack(next_states), np.asarray(terminals, dtype=np.float32),
-                indices, weights.astype(np.float32))
+                indices, weights.astype(np.float32),
+                np.asarray([np.nan if d is None else d for d in discounts], dtype=np.float32))
 
     def update_priorities(self, indices, priorities):
+        if len(indices) != len(priorities):
+            raise ValueError("indices and priorities must have equal length")
         for index, priority in zip(indices, priorities):
+            if not 0 <= int(index) < len(self.data) or not np.isfinite(priority):
+                raise ValueError("invalid priority update")
             self.priorities[int(index)] = abs(float(priority)) + self.eps
 
     def __len__(self):
         return len(self.data)
+
+
+class NStepAccumulator:
+    """Convert one-step transitions into n-step replay entries.
+
+    The accumulator flushes every remaining prefix at episode end. Truncation
+    flushes the queue but remains non-terminal so a value bootstrap is retained.
+    """
+    def __init__(self, replay, n=3, gamma=0.99):
+        if n < 1 or not 0 <= gamma <= 1:
+            raise ValueError("n must be >= 1 and gamma must be in [0, 1]")
+        self.replay, self.n, self.gamma = replay, int(n), float(gamma)
+        self.queue = deque()
+
+    def _emit(self, horizon):
+        items = list(self.queue)[:horizon]
+        state, action = items[0][0], items[0][1]
+        total_reward = sum((self.gamma ** i) * item[2] for i, item in enumerate(items))
+        next_state = items[-1][3]
+        terminated = items[-1][4]
+        discount = self.gamma ** len(items)
+        self.replay.add(state, action, total_reward, next_state, terminated,
+                        discount=discount)
+        self.queue.popleft()
+
+    def add(self, state, action, reward, next_state, terminated, truncated=False):
+        self.queue.append((np.asarray(state, dtype=np.float32), int(action),
+                           float(reward), np.asarray(next_state, dtype=np.float32),
+                           bool(terminated)))
+        if terminated or truncated:
+            while self.queue:
+                self._emit(min(self.n, len(self.queue)))
+        elif len(self.queue) >= self.n:
+            self._emit(self.n)
+
+    def reset(self):
+        self.queue.clear()
 
 
 class DoubleDQNAgent:
@@ -95,7 +134,8 @@ class DoubleDQNAgent:
     def update(self, replay, batch_size=64):
         if len(replay) < batch_size:
             return None
-        states, actions, rewards, next_states, terminals = replay.sample(batch_size)
+        sample = replay.sample(batch_size)
+        states, actions, rewards, next_states, terminals = sample[:5]
         states = torch.as_tensor(states, dtype=torch.float32, device=self.device)
         actions = torch.as_tensor(actions, dtype=torch.long, device=self.device)
         rewards = torch.as_tensor(rewards, dtype=torch.float32, device=self.device)
