@@ -54,6 +54,8 @@ def awr_train_step(policy, value_network, actor_optimizer, value_optimizer,
             raise ValueError("value predictions and returns must have matching elements")
         values = values.reshape_as(returns)
     advantages = (returns - values).detach()
+    if mask is not None and mask.numel() == advantages.numel() and mask.shape != advantages.shape:
+        mask = mask.reshape_as(advantages)
     value_loss = awr_value_loss(values, returns, mask)
     value_optimizer.zero_grad(set_to_none=True)
     value_loss.backward()
