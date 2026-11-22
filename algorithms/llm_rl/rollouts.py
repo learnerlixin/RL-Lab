@@ -66,6 +66,66 @@ def _sequence_logps(model, input_ids, attention_mask, completion_mask):
         model.train(was_training)
 
 
+
+def generate_causal_lm_completions(model, prompt_token_ids, group_size,
+                                   pad_token_id, max_new_tokens,
+                                   eos_token_id=None, generation_kwargs=None):
+    """Generate one completion group with a Hugging Face-style causal LM.
+
+    This adapter only relies on model.generate and does not import Transformers.
+    generation_kwargs can include sampling settings such as do_sample,
+    temperature and top_p. Special arguments controlled by this helper cannot
+    be overridden there.
+    """
+    if not hasattr(model, "generate"):
+        raise TypeError("model must expose a generate method")
+    if group_size < 2 or max_new_tokens < 1:
+        raise ValueError("group_size must be >=2 and max_new_tokens positive")
+    prompt = [int(token) for token in prompt_token_ids]
+    if not prompt:
+        raise ValueError("prompt_token_ids must be non-empty")
+    options = dict(generation_kwargs or {})
+    reserved = {
+        "input_ids", "attention_mask", "num_return_sequences",
+        "max_new_tokens", "pad_token_id", "eos_token_id",
+    }
+    conflicts = reserved.intersection(options)
+    if conflicts:
+        raise ValueError(f"generation_kwargs cannot override: {sorted(conflicts)}")
+    device = _model_device(model)
+    input_ids = torch.tensor([prompt] * group_size, dtype=torch.long, device=device)
+    attention_mask = torch.ones_like(input_ids)
+    with torch.inference_mode():
+        generated = model.generate(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            num_return_sequences=group_size,
+            max_new_tokens=max_new_tokens,
+            pad_token_id=int(pad_token_id),
+            eos_token_id=None if eos_token_id is None else int(eos_token_id),
+            **options,
+        )
+    if hasattr(generated, "sequences"):
+        generated = generated.sequences
+    generated = torch.as_tensor(generated)
+    if generated.ndim != 2 or generated.shape[0] != group_size:
+        raise ValueError("generate must return token IDs with shape [group_size, sequence_length]")
+    if generated.shape[1] < len(prompt):
+        raise ValueError("generated sequences cannot be shorter than the prompt")
+    completions = []
+    for sequence in generated[:, len(prompt):].detach().cpu().tolist():
+        sequence = [int(token) for token in sequence]
+        if eos_token_id is not None and int(eos_token_id) in sequence:
+            sequence = sequence[:sequence.index(int(eos_token_id)) + 1]
+        else:
+            while sequence and sequence[-1] == int(pad_token_id):
+                sequence.pop()
+        if not sequence:
+            raise ValueError("model generated an empty completion")
+        completions.append(sequence)
+    return completions
+
+
 def prepare_grpo_batch(rollouts, old_policy_model, pad_token_id,
                        reference_model=None, device=None):
     """Pad prompt/completion groups and calculate behavior/reference token logps.
@@ -134,4 +194,4 @@ def prepare_grpo_batch(rollouts, old_policy_model, pad_token_id,
     return batch
 
 
-__all__ = ["collect_grouped_rollouts", "prepare_grpo_batch"]
+__all__ = ["collect_grouped_rollouts", "generate_causal_lm_completions", "prepare_grpo_batch"]
