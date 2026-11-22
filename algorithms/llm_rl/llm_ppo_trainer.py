@@ -88,7 +88,8 @@ class LLMPPOTrainer:
                 completion = completion[:completion.index(self.eos_token_id) + 1]
             if not completion:
                 raise ValueError("generation callback must return a non-empty completion")
-            reward = float(self.reward_fn(prompt, completion))
+            with torch.inference_mode():
+                reward = float(self.reward_fn(prompt, completion))
             if not torch.isfinite(torch.tensor(reward)):
                 raise ValueError("reward_fn must return a finite scalar")
             sequences.append(prompt + completion)
@@ -117,7 +118,11 @@ class LLMPPOTrainer:
                 prompt_token_ids, max_new_tokens)
             batch_size = len(sequences)
             max_length = max(len(sequence) for sequence in sequences)
-            device = torch.device(self.device) if self.device is not None else _model_device(self.policy)
+            policy_device = _model_device(self.policy)
+            if self.device is not None and torch.device(self.device) != policy_device:
+                raise ValueError("configured device must match the policy model device")
+            device = policy_device
+            value_device = _model_device(self.value_model)
             input_ids = torch.full(
                 (batch_size, max_length), self.pad_token_id,
                 dtype=torch.long, device=device)
@@ -149,7 +154,10 @@ class LLMPPOTrainer:
                         attention_mask.to(reference_device),
                     ).to(device)
                 values = _value_predictions(
-                    self.value_model, input_ids, attention_mask)
+                    self.value_model,
+                    input_ids.to(value_device),
+                    attention_mask.to(value_device),
+                ).to(device)
 
             shifted_completion_mask = (
                 completion_mask[:, 1:] * attention_mask[:, 1:].to(torch.float32)
@@ -185,7 +193,8 @@ class LLMPPOTrainer:
 
                     value_metrics = llm_ppo_value_step(
                         self.value_model, self.value_optimizer,
-                        mb_ids, mb_attention, mb_returns, mb_value_mask,
+                        mb_ids.to(value_device), mb_attention.to(value_device),
+                        mb_returns.to(value_device), mb_value_mask.to(value_device),
                         max_grad_norm=self.max_grad_norm,
                     )
                     policy_metrics = llm_ppo_policy_step(
@@ -195,6 +204,7 @@ class LLMPPOTrainer:
                         clip_range=self.clip_range,
                         reference_token_logps=mb_reference_logps,
                         kl_coef=self.kl_coef,
+                        max_grad_norm=self.max_grad_norm,
                     )
                     aggregate["policy_loss"] += policy_metrics["loss"]
                     aggregate["approx_kl"] += policy_metrics["approx_kl"]
