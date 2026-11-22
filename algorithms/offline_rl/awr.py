@@ -172,4 +172,5 @@ class AWRAgent:
         }
 
 
-__all__ = ["awr_weights", "awr_policy_loss", "awr_value_loss", "awr_train_step",\n           "monte_carlo_returns", "AWRAgent"]
+__all__ = ["awr_weights", "awr_policy_loss", "awr_value_loss", "awr_train_step",
+           "monte_carlo_returns", "AWRAgent"]
