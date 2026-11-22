@@ -1,15 +1,70 @@
 import torch
-from algorithms.offline_rl.cql import discrete_cql_penalty
+from torch import nn
+
+from algorithms.offline_rl.cql import (
+    continuous_cql_critic_step, continuous_cql_penalty, discrete_cql_penalty,
+)
 
 
-def test_cql_penalty_is_finite():
+class TinyCritic(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = nn.Sequential(nn.Linear(4, 16), nn.ReLU(), nn.Linear(16, 1))
+
+    def forward(self, states, actions):
+        return self.net(torch.cat([states, actions], dim=-1))
+
+
+def test_discrete_cql_penalty_is_finite_and_conservative():
     q_all = torch.tensor([[1.0, 2.0, 3.0], [0.0, 1.0, 2.0]])
     q_data = torch.tensor([1.0, 0.0])
     assert torch.isfinite(discrete_cql_penalty(q_all, q_data))
-
-
-def test_cql_penalty_grows_when_unseen_action_q_increases():
-    q_data = torch.tensor([1.0])
-    low = discrete_cql_penalty(torch.tensor([[1.0, 1.0]]), q_data)
-    high = discrete_cql_penalty(torch.tensor([[1.0, 5.0]]), q_data)
+    low = discrete_cql_penalty(torch.tensor([[1.0, 1.0]]), torch.tensor([1.0]))
+    high = discrete_cql_penalty(torch.tensor([[1.0, 5.0]]), torch.tensor([1.0]))
     assert high > low
+
+
+def test_continuous_cql_penalty_and_log_density_correction():
+    critic = TinyCritic()
+    states = torch.randn(4, 2)
+    data_actions = torch.zeros(4, 2)
+    random_actions = torch.randn(4, 5, 2)
+    policy_actions = torch.randn(4, 5, 2)
+    random_logps = torch.zeros(4, 5)
+    policy_logps = torch.zeros(4, 5)
+    loss = continuous_cql_penalty(
+        critic, states, data_actions, random_actions, policy_actions,
+        random_logps, policy_logps)
+    corrected = continuous_cql_penalty(
+        critic, states, data_actions, random_actions, policy_actions,
+        random_logps + 2.0, policy_logps + 2.0)
+    assert torch.isfinite(loss)
+    assert corrected < loss
+
+
+def test_continuous_cql_critic_step_updates_parameters():
+    critic = TinyCritic()
+    optimizer = torch.optim.Adam(critic.parameters(), lr=1e-3)
+    states = torch.randn(8, 2)
+    actions = torch.randn(8, 2)
+    targets = torch.randn(8, 1)
+    random_actions = torch.randn(8, 4, 2)
+    policy_actions = torch.randn(8, 4, 2)
+    before = next(critic.parameters()).detach().clone()
+    metrics = continuous_cql_critic_step(
+        critic, optimizer, states, actions, targets, random_actions, policy_actions)
+    assert torch.isfinite(torch.tensor(metrics["loss"]))
+    assert not torch.equal(before, next(critic.parameters()))
+
+
+def test_continuous_cql_rejects_bad_action_shapes():
+    critic = TinyCritic()
+    states = torch.randn(2, 2)
+    actions = torch.randn(2, 2)
+    try:
+        continuous_cql_penalty(
+            critic, states, actions, torch.randn(2, 3), torch.randn(2, 3, 2))
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("invalid candidate-action shape should fail")
