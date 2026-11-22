@@ -110,3 +110,9 @@ def test_continuous_cql_agent_performs_offline_update_and_bounds_action():
     assert action.shape == (2,)
     assert -2.0 <= action[0] <= 2.0
     assert -1.0 <= action[1] <= 1.0
+
+def test_continuous_cql_agent_rejects_nonpositive_learning_rate():
+    import pytest
+    from algorithms.offline_rl.cql import ContinuousCQLAgent
+    with pytest.raises(ValueError):
+        ContinuousCQLAgent(3, 2, learning_rate=0.0)
