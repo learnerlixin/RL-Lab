@@ -24,6 +24,8 @@ def summarize_seed_results(results):
         if not isinstance(metrics, Mapping) or not metrics:
             raise ValueError(f"seed {seed} must contain a non-empty metrics mapping")
         names = set(metrics)
+        if any(not isinstance(name, str) for name in names):
+            raise TypeError("metric names must be strings")
         if metric_names is None:
             metric_names = names
         elif names != metric_names:
