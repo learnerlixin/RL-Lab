@@ -10,7 +10,7 @@ def test_bradley_terry_loss_ranks_chosen_higher():
 
 def test_dpo_outputs_finite_loss():
     loss, chosen, rejected = dpo_loss(torch.tensor([-1.0]), torch.tensor([-2.0]),
-                                     torch.tensor([-1.5]), torch.tensor([-2.5]), beta=0.1)
+                                     torch.tensor([-1.5]), torch.tensor([-2.0]), beta=0.1)
     assert torch.isfinite(loss)
     assert chosen.item() > rejected.item()
 
