@@ -121,10 +121,11 @@ def llm_ppo_value_step(value_model, optimizer, input_ids, attention_mask,
 
 def llm_ppo_policy_step(model, optimizer, input_ids, attention_mask, completion_mask,
                         old_token_logps, advantages, clip_range=0.2,
-                        reference_token_logps=None, kl_coef=0.0):
+                        reference_token_logps=None, kl_coef=0.0,
+                        max_grad_norm=1.0):
     """One clipped actor update; use token_level_gae/value_step for critic targets."""
-    if clip_range <= 0 or kl_coef < 0:
-        raise ValueError("invalid clip_range or kl_coef")
+    if clip_range <= 0 or kl_coef < 0 or max_grad_norm <= 0:
+        raise ValueError("invalid clip_range, kl_coef or max_grad_norm")
     new_logps = causal_token_logps(model, input_ids, attention_mask)
     mask = (completion_mask[:, 1:] * attention_mask[:, 1:]).to(new_logps.dtype)
     if mask.sum() <= 0:
@@ -156,6 +157,6 @@ def llm_ppo_policy_step(model, optimizer, input_ids, attention_mask, completion_
     loss = (per_token_loss * mask).sum() / mask.sum()
     optimizer.zero_grad()
     loss.backward()
-    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+    torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
     optimizer.step()
     return {"loss": float(loss.detach()), "approx_kl": float(kl_value.detach())}
