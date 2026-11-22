@@ -45,10 +45,71 @@ def kl_shaped_rewards(environment_rewards, policy_logps, reference_logps,
     return (rewards - kl_coef * kl_estimate) * completion_mask.to(policy_logps.dtype)
 
 
+
+def token_level_gae(rewards, values, terminals, mask, gamma=0.99, gae_lambda=0.95):
+    """Compute masked GAE; values has shape [B,T+1] including bootstrap value.
+
+    terminals is true only for genuine episode termination. A time-limit
+    truncation should keep terminal=0 so the final value can bootstrap.
+    """
+    if not 0.0 <= gamma <= 1.0 or not 0.0 <= gae_lambda <= 1.0:
+        raise ValueError("gamma and gae_lambda must be in [0,1]")
+    if rewards.ndim != 2 or values.shape != (rewards.shape[0], rewards.shape[1] + 1):
+        raise ValueError("rewards must be [B,T] and values must be [B,T+1]")
+    if terminals.shape != rewards.shape or mask.shape != rewards.shape:
+        raise ValueError("terminals and mask must match rewards [B,T]")
+    rewards = rewards.to(dtype=values.dtype)
+    terminals = terminals.to(device=values.device, dtype=values.dtype)
+    mask = mask.to(device=values.device, dtype=values.dtype)
+    advantages = torch.zeros_like(rewards)
+    gae = torch.zeros(rewards.shape[0], dtype=values.dtype, device=values.device)
+    for t in reversed(range(rewards.shape[1])):
+        nonterminal = 1.0 - terminals[:, t]
+        delta = rewards[:, t] + gamma * values[:, t + 1] * nonterminal - values[:, t]
+        gae = (delta + gamma * gae_lambda * nonterminal * gae) * mask[:, t]
+        advantages[:, t] = gae
+    returns = (advantages + values[:, :-1]) * mask
+    return advantages, returns
+
+
+def llm_ppo_value_step(value_model, optimizer, input_ids, attention_mask,
+                       value_targets, value_mask, max_grad_norm=1.0):
+    """Fit a token value head to GAE returns with a masked MSE update.
+
+    The value model must return a [B,L] tensor, [B,L,1] tensor, or an object
+    exposing a matching .values tensor (tuple/list output[0] is also accepted).
+    """
+    if max_grad_norm <= 0:
+        raise ValueError("max_grad_norm must be positive")
+    output = value_model(input_ids=input_ids, attention_mask=attention_mask)
+    if hasattr(output, "values"):
+        predictions = output.values
+    elif isinstance(output, (tuple, list)):
+        predictions = output[0]
+    else:
+        predictions = output
+    if not isinstance(predictions, torch.Tensor):
+        raise TypeError("value model output must be a tensor")
+    if predictions.ndim == 3 and predictions.shape[-1] == 1:
+        predictions = predictions.squeeze(-1)
+    if predictions.shape != value_targets.shape or value_mask.shape != value_targets.shape:
+        raise ValueError("predictions, value_targets and value_mask must have matching [B,L] shapes")
+    mask = value_mask.to(device=predictions.device, dtype=predictions.dtype)
+    if mask.sum() <= 0:
+        raise ValueError("value_mask must contain at least one valid token")
+    per_token_loss = F.mse_loss(predictions, value_targets.detach(), reduction="none")
+    loss = (per_token_loss * mask).sum() / mask.sum()
+    optimizer.zero_grad(set_to_none=True)
+    loss.backward()
+    grad_norm = torch.nn.utils.clip_grad_norm_(value_model.parameters(), max_grad_norm)
+    optimizer.step()
+    return {"value_loss": float(loss.detach()), "grad_norm": float(grad_norm.detach())}
+
+
 def llm_ppo_policy_step(model, optimizer, input_ids, attention_mask, completion_mask,
                         old_token_logps, advantages, clip_range=0.2,
                         reference_token_logps=None, kl_coef=0.0):
-    """One clipped actor update. Critic/GAE and rollout collection are external."""
+    """One clipped actor update; use token_level_gae/value_step for critic targets."""
     if clip_range <= 0 or kl_coef < 0:
         raise ValueError("invalid clip_range or kl_coef")
     new_logps = causal_token_logps(model, input_ids, attention_mask)
