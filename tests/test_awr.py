@@ -1,5 +1,6 @@
 import pytest
 import torch
+from torch import nn
 
 from algorithms.offline_rl.awr import awr_policy_loss, awr_value_loss, awr_weights
 
