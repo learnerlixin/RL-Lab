@@ -116,3 +116,19 @@ def test_evaluate_policy_supports_continuous_actor_critic_tuple_outputs():
     result = evaluate_policy(ContinuousActionEnv(), policy, episodes=2,
                              deterministic=True)
     assert result["mean_length"] == 2.0
+
+
+def test_csv_logger_rejects_existing_file_with_different_schema(tmp_path):
+    path = tmp_path / "metrics.csv"
+    with CSVLogger(path, ["step", "reward"]) as logger:
+        logger.log({"step": 1, "reward": 2.0})
+    with pytest.raises(ValueError):
+        CSVLogger(path, ["step", "loss"])
+
+
+def test_checkpoint_atomic_save_leaves_no_temporary_file(tmp_path):
+    model = nn.Linear(2, 1)
+    path = tmp_path / "latest.pt"
+    save_checkpoint(path, model, step=3)
+    assert path.exists()
+    assert list(tmp_path.glob(".latest.pt.*.tmp")) == []
