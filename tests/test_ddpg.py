@@ -26,6 +26,7 @@ def test_ddpg_action_bounds_and_update():
     metrics = agent.update(_replay(), batch_size=8)
     assert set(metrics) == {"critic_loss", "actor_loss"}
     assert all(np.isfinite(value) for value in metrics.values())
+    assert all(parameter.grad is None for parameter in agent.critic.parameters())
 
 
 def test_ddpg_returns_none_until_batch_available():
