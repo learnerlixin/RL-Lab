@@ -56,3 +56,27 @@ def test_awr_train_step_updates_actor_and_value():
     assert torch.isfinite(torch.tensor(metrics["actor_loss"]))
     assert torch.isfinite(torch.tensor(metrics["value_loss"]))
     assert not torch.equal(actor_before, policy.logit.weight)
+
+
+def test_monte_carlo_returns_resets_on_episode_boundaries():
+    from algorithms.offline_rl.awr import monte_carlo_returns
+    returns = monte_carlo_returns(
+        [1.0, 2.0, 3.0], terminals=[0, 1, 0], timeouts=[0, 0, 1], gamma=0.5)
+    assert torch.allclose(returns, torch.tensor([2.0, 2.0, 3.0]))
+
+
+def test_awr_agent_updates_policy_and_respects_action_bounds():
+    from algorithms.offline_rl.awr import AWRAgent
+    agent = AWRAgent(3, 2, action_low=[-2.0, -1.0],
+                     action_high=[2.0, 1.0], hidden_dim=32)
+    batch = {"observations": torch.randn(8, 3),
+             "actions": torch.empty(8, 2).uniform_(-0.8, 0.8),
+             "returns": torch.randn(8)}
+    before = next(agent.actor.parameters()).detach().clone()
+    metrics = agent.update(batch)
+    assert torch.isfinite(torch.tensor(metrics["actor_loss"]))
+    assert torch.isfinite(torch.tensor(metrics["value_loss"]))
+    assert not torch.equal(before, next(agent.actor.parameters()))
+    action = agent.act([0.0, 0.0, 0.0])
+    assert -2.0 <= action[0] <= 2.0
+    assert -1.0 <= action[1] <= 1.0
