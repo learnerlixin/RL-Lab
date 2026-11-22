@@ -140,5 +140,6 @@ def continuous_cql_critic_step(critic, optimizer, states, dataset_actions, td_ta
             **{key: float(value) for key, value in components.items()}}
 
 
-__all__ = ["discrete_cql_penalty", "discrete_cql_critic_loss", "discrete_cql_critic_step",\n           "continuous_cql_penalty",
+__all__ = ["discrete_cql_penalty", "discrete_cql_critic_loss", "discrete_cql_critic_step",
+           "continuous_cql_penalty",
            "continuous_cql_critic_loss", "continuous_cql_critic_step"]
