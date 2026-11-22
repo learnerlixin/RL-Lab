@@ -24,3 +24,16 @@ def test_ppo_update_runs():
                          returns, advantages, epochs=2, batch_size=8)
     assert set(metrics) == {"policy_loss", "value_loss", "entropy"}
     assert all(torch.isfinite(torch.tensor(v)) for v in metrics.values())
+
+def test_ppo_update_rejects_empty_rollout_and_negative_coefficients():
+    import pytest
+    model = ActorCritic(4, 2)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    with pytest.raises(ValueError):
+        ppo_update(model, optimizer, torch.empty(0, 4), torch.empty(0, dtype=torch.long),
+                   torch.empty(0), torch.empty(0), torch.empty(0))
+    states = torch.randn(2, 4)
+    actions, logps, values = model.act(states)
+    with pytest.raises(ValueError):
+        ppo_update(model, optimizer, states, actions, logps.detach(),
+                   values.detach(), torch.ones(2), value_coef=-1.0)
