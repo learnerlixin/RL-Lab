@@ -3,7 +3,9 @@ import numpy as np
 import torch
 from torch import nn
 import torch.nn.functional as F
-from algorithms.policy_optimization.sac import ContinuousReplayBuffer, QNetwork
+from algorithms.policy_optimization.sac import (
+    ContinuousReplayBuffer, QNetwork, _validated_action_bounds,
+)
 
 
 class DeterministicActor(nn.Module):
@@ -12,8 +14,7 @@ class DeterministicActor(nn.Module):
         self.net = nn.Sequential(nn.Linear(observation_dim, hidden_dim), nn.ReLU(),
                                  nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
                                  nn.Linear(hidden_dim, action_dim), nn.Tanh())
-        low = torch.as_tensor(action_low, dtype=torch.float32)
-        high = torch.as_tensor(action_high, dtype=torch.float32)
+        low, high = _validated_action_bounds(action_dim, action_low, action_high)
         self.register_buffer("scale", (high - low) / 2.0)
         self.register_buffer("bias", (high + low) / 2.0)
 
@@ -25,6 +26,10 @@ class TD3Agent:
     def __init__(self, observation_dim, action_dim, action_low=-1.0, action_high=1.0,
                  learning_rate=3e-4, gamma=0.99, tau=0.005,
                  policy_noise=0.2, noise_clip=0.5, policy_delay=2, device="cpu"):
+        if learning_rate <= 0 or not 0.0 <= gamma <= 1.0 or not 0.0 < tau <= 1.0:
+            raise ValueError("learning_rate must be positive, gamma in [0,1], tau in (0,1]")
+        if policy_noise < 0 or noise_clip < 0 or policy_delay <= 0:
+            raise ValueError("policy_noise/noise_clip must be nonnegative and policy_delay positive")
         self.device = torch.device(device)
         self.actor = DeterministicActor(observation_dim, action_dim, action_low, action_high).to(self.device)
         self.target_actor = DeterministicActor(observation_dim, action_dim, action_low, action_high).to(self.device)
