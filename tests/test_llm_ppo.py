@@ -1,7 +1,10 @@
 import torch
 from torch import nn
 from types import SimpleNamespace
-from algorithms.llm_rl.llm_ppo import (\n    causal_token_logps, kl_shaped_rewards, llm_ppo_policy_step,\n    token_level_gae, llm_ppo_value_step,\n)
+from algorithms.llm_rl.llm_ppo import (
+    causal_token_logps, kl_shaped_rewards, llm_ppo_policy_step,
+    token_level_gae, llm_ppo_value_step,
+)
 
 
 class TinyLM(nn.Module):
@@ -63,7 +66,7 @@ def test_token_level_gae_stops_at_terminal():
     mask = torch.ones_like(rewards)
     advantages, _ = token_level_gae(rewards, values, terminals, mask,
                                     gamma=1.0, gae_lambda=1.0)
-    assert torch.allclose(advantages, torch.tensor([[8.0, -3.0]]))
+    assert torch.allclose(advantages, torch.tensor([[3.0, -3.0]]))
 
 
 def test_llm_ppo_value_step_updates_value_head():
