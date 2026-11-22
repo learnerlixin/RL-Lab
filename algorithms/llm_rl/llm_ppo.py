@@ -58,7 +58,7 @@ def token_level_gae(rewards, values, terminals, mask, gamma=0.99, gae_lambda=0.9
         raise ValueError("rewards must be [B,T] and values must be [B,T+1]")
     if terminals.shape != rewards.shape or mask.shape != rewards.shape:
         raise ValueError("terminals and mask must match rewards [B,T]")
-    rewards = rewards.to(dtype=values.dtype)
+    rewards = rewards.to(device=values.device, dtype=values.dtype)
     terminals = terminals.to(device=values.device, dtype=values.dtype)
     mask = mask.to(device=values.device, dtype=values.dtype)
     advantages = torch.zeros_like(rewards)
@@ -97,7 +97,7 @@ def llm_ppo_value_step(value_model, optimizer, input_ids, attention_mask,
     mask = value_mask.to(device=predictions.device, dtype=predictions.dtype)
     if mask.sum() <= 0:
         raise ValueError("value_mask must contain at least one valid token")
-    per_token_loss = F.mse_loss(predictions, value_targets.detach(), reduction="none")
+    per_token_loss = F.mse_loss(predictions, value_targets.to(device=predictions.device, dtype=predictions.dtype).detach(), reduction="none")
     loss = (per_token_loss * mask).sum() / mask.sum()
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
@@ -119,7 +119,13 @@ def llm_ppo_policy_step(model, optimizer, input_ids, attention_mask, completion_
     if old_token_logps.shape != new_logps.shape or mask.shape != new_logps.shape:
         raise ValueError("old log-probs and shifted completion mask must match model output")
     if advantages.ndim == 1:
+        if advantages.shape[0] != new_logps.shape[0]:
+            raise ValueError("advantages batch size must match token log-probabilities")
         advantages = advantages.unsqueeze(-1)
+    elif advantages.shape not in ((new_logps.shape[0], 1), new_logps.shape):
+        raise ValueError("advantages must have shape [B], [B,1] or [B,T]")
+    if reference_token_logps is not None and reference_token_logps.shape != new_logps.shape:
+        raise ValueError("reference token log-probabilities must match model output")
     ratio = torch.exp(new_logps - old_token_logps)
     unclipped = ratio * advantages
     clipped = torch.clamp(ratio, 1.0 - clip_range, 1.0 + clip_range) * advantages
