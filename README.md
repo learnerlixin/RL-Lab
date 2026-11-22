@@ -13,7 +13,7 @@
 | 深度价值 | DQN、Replay Buffer、Target Network | 实现 + 测试 |
 | 深度价值 | Double DQN、Dueling 网络、Prioritized Replay | 实现 + 测试 |
 | 深度价值 | Rainbow：C51、Double-DQN target、Dueling、NoisyNet、PER 加权更新、n-step accumulator | 集成 Agent + 测试 + CartPole 示例 |
-| 策略梯度 | REINFORCE、Actor-Critic、GAE | 实现 + 测试 |
+| 策略梯度 | REINFORCE、Actor-Critic、GAE、同步 A2C | 实现 + 测试 |
 | 策略优化 | 离散动作 PPO minibatch update | 实现 + 测试 |
 | 连续控制 | SAC、TD3（双 Q、target 网络、连续动作策略） | 实现 + 测试 |
 | 离线 RL | IQL expectile、Q target、advantage-weighted BC、离散 CQL penalty | 目标函数组件 + 测试 |
@@ -66,7 +66,7 @@ python examples/train_rainbow_cartpole.py --episodes 300
 1. 阅读 `docs/01_mdp_and_bellman.md` 和 `docs/02_td_control.md`。
 2. 运行 `examples/tabular_control.py`，理解 SARSA 与 Q-learning。
 3. 学习 DP、MC、TD，再阅读 DQN、Double DQN 和 Rainbow。
-4. 从 REINFORCE 过渡到 Actor-Critic、GAE 和 PPO。
+4. 从 REINFORCE 过渡到 Actor-Critic、A2C、GAE 和 PPO。
 5. 阅读 LLM 偏好优化文档，理解 Reward Model、DPO、PPO、GRPO 的联系与区别。
 
 ## LLM 强化学习的重要边界
