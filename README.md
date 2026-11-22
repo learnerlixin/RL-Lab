@@ -11,7 +11,7 @@
 | Policy Gradient | REINFORCE、Actor-Critic、GAE、A2C、离散 PPO、连续 tanh-Gaussian PPO | 算法组件、测试、CartPole/Pendulum 训练示例 |
 | 连续控制 | DDPG、SAC、TD3 | Agent、测试、Pendulum 示例 |
 | Offline RL | Behavior Cloning、IQL Agent、AWR Agent、离散 CQL critic step、连续 CQL Agent | Agent、训练步骤、数据集工具、Pendulum/CartPole 示例、测试 |
-| LLM RL | Bradley–Terry Reward Model、DPO、token-level PPO + GAE/Value head、GRPO rollout preparation | Objective、训练步骤、批次构造、测试 |
+| LLM RL | Bradley–Terry Reward Model、DPO、token-level PPO + GAE/Value head、GRPO Trainer、HF-style generate adapter | Objective、训练步骤、批次构造、tiny LLM pipeline 示例、测试 |
 | 实验基础设施 | 随机种子、CSV 日志、原子 Checkpoint、策略评估、多 seed 汇总 | 工具、测试、训练示例、文档 |
 
 ## 多随机种子实验
