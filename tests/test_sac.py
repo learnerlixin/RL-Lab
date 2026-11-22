@@ -1,6 +1,5 @@
 import numpy as np
-from algorithms.value_based.dqn import ReplayBuffer
-from algorithms.policy_optimization.sac import GaussianActor, SACAgent
+from algorithms.policy_optimization.sac import GaussianActor, SACAgent, ContinuousReplayBuffer
 import torch
 
 
@@ -14,7 +13,7 @@ def test_gaussian_actor_respects_action_bounds():
 
 
 def test_sac_update_runs():
-    replay = ReplayBuffer(100)
+    replay = ContinuousReplayBuffer(100)
     for i in range(20):
         replay.add(np.zeros(3), np.zeros(2), 1.0, np.ones(3), False)
     agent = SACAgent(3, 2, action_low=-1.0, action_high=1.0)
