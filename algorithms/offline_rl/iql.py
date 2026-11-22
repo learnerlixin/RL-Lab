@@ -101,6 +101,8 @@ class IQLAgent:
                  action_high=1.0, hidden_dim=256, learning_rate=3e-4,
                  gamma=0.99, tau=0.005, expectile=0.7, temperature=3.0,
                  max_weight=100.0, device="cpu"):
+        if learning_rate <= 0:
+            raise ValueError("learning_rate must be positive")
         if not 0.0 <= gamma <= 1.0 or not 0.0 < tau <= 1.0:
             raise ValueError("gamma must be in [0,1] and tau in (0,1]")
         if not 0.0 < expectile < 1.0 or temperature <= 0 or max_weight <= 0:
