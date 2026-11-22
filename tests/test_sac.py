@@ -28,7 +28,7 @@ def test_sac_rejects_invalid_hyperparameters_and_action_bounds():
     with pytest.raises(ValueError):
         SACAgent(3, 2, tau=0.0)
     with pytest.raises(ValueError):
-        GaussianActor(3, 2, action_low=[-1.0], action_high=[1.0, 2.0])
+        GaussianActor(3, 2, action_low=[-1.0, -1.0, -1.0], action_high=[1.0, 1.0, 1.0])
     with pytest.raises(ValueError):
         ContinuousReplayBuffer(capacity=0)
 
