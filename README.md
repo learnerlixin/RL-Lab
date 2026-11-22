@@ -14,7 +14,7 @@
 | LLM RL | Bradley–Terry Reward Model、DPO、token-level PPO + GAE/Value head、GRPO rollout preparation | Objective、训练步骤、批次构造、测试 |
 | 实验基础设施 | 随机种子、CSV 日志、Checkpoint、策略评估 | 工具、测试、文档 |
 
-## PPO rollout 缓冲区
+## 多随机种子实验\n\n`run_seed_sweep` 和 `summarize_seed_results` 提供统一多 seed 执行与 mean/std/置信区间汇总，说明见 [`docs/33_multi_seed_benchmark.md`](docs/33_multi_seed_benchmark.md)。\n\n## PPO rollout 缓冲区
 
 `RolloutBuffer` 提供 transition 存储、GAE/return 计算与 minibatch 采样，并区分 terminated 和 truncated。用法见 [`docs/31_on_policy_rollout_buffer.md`](docs/31_on_policy_rollout_buffer.md)。
 
@@ -89,7 +89,7 @@ BC 示例收集一个简单控制器生成的 CartPole 演示数据；IQL 示例
 
 ## LLM RL 的边界
 
-DPO、LLM-PPO、GRPO 和 Reward Model trainer 提供可复用的目标函数或 optimizer step，不是开箱即用的 LLM 对齐框架。模型生成、tokenizer、rollout storage、奖励打分、参考模型管理、分布式调度、实验跟踪和模型评估仍需按具体模型/任务接入。GRPO 支持 callback 驱动的 group rollout 收集、prompt/completion padding、old/reference log-prob 计算和训练批次构造；模型生成策略、tokenizer 与 reward scoring 仍由调用方提供。LLM-PPO 还提供 token-level GAE 和 value head 更新；模型生成和 PPO minibatch/epoch 调度仍由调用方组织。
+DPO、LLM-PPO、GRPO 和 Reward Model trainer 提供可复用的目标函数或 optimizer step，不是开箱即用的 LLM 对齐框架。模型生成、tokenizer、rollout storage、奖励打分、参考模型管理、分布式调度、实验跟踪和模型评估仍需按具体模型/任务接入。GRPO 支持 callback 驱动的 group rollout 收集、prompt/completion padding、old/reference log-prob 计算、批次构造与一步式 GRPOTrainer；模型生成策略、tokenizer 与 reward scoring 仍由调用方提供。LLM-PPO 还提供 token-level GAE 和 value head 更新；模型生成和 PPO minibatch/epoch 调度仍由调用方组织。
 
 ## 实验复现
 
