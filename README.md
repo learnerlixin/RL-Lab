@@ -12,6 +12,7 @@
 | 表格型 | epsilon-greedy、SARSA、Q-learning | 实现 + 测试 |
 | 深度价值 | DQN、Replay Buffer、Target Network | 实现 + 测试 |
 | 深度价值 | Double DQN、Dueling 网络、Prioritized Replay primitives | 实现 + 测试 |
+| 深度价值 | Rainbow 构件：NoisyLinear、C51 投影、n-step return | 组件 + 测试 |
 | 策略梯度 | REINFORCE、Actor-Critic、GAE | 实现 + 测试 |
 | 策略优化 | 离散动作 PPO minibatch update | 实现 + 测试 |
 | 连续控制 | SAC、TD3（双 Q、target 网络、连续动作策略） | 实现 + 测试 |
@@ -72,4 +73,4 @@ pytest -q
 
 ## Roadmap
 
-后续扩展方向包括 Rainbow、更多离线 RL 方法、连续动作 PPO、可复现的 Gymnasium 端到端训练脚本、LLM rollout/GRPO 训练框架适配、算法基准实验和消融分析。
+后续扩展方向包括完整集成 RainbowAgent、更多离线 RL 方法、连续动作 PPO、LLM rollout/GRPO 训练框架适配、算法基准实验和消融分析。
