@@ -47,3 +47,26 @@ metrics = grpo_train_step(
 completion_mask 的位置与 input_ids 一致；因果语言模型的 next-token log-prob 会对 logits/labels/mask 做一次 shift，因此 trainer 接收的 old_logps 形状为 [B,G,L-1]。padding 和 prompt token 的掩码值为 0，只有生成的 completion 目标 token 参与策略损失。
 
 `collect_grouped_rollouts` 与 `prepare_grpo_batch` 是 rollout/packing 工具，不是完整 RLHF 系统。批次更新之后如何刷新旧策略、采样调度、奖励归一化策略、KL 控制器和分布式生成仍由训练循环负责。
+
+
+## 4. 一步式 GRPOTrainer
+
+若不需要自定义 rollout 迭代器，可以使用 `GRPOTrainer` 将 callback generation、reward scoring、packing 和单次策略更新组合：
+
+```python
+from algorithms.llm_rl import GRPOTrainer
+
+trainer = GRPOTrainer(
+    policy, optimizer,
+    generate_fn=lambda policy, prompt_ids, group_size: generate(
+        policy, prompt_ids, num_return_sequences=group_size),
+    reward_fn=lambda prompt_ids, completion_ids: reward(
+        prompt_ids, completion_ids),
+    pad_token_id=tokenizer.pad_token_id,
+    reference_model=reference_model,
+    kl_coef=0.02,
+)
+metrics = trainer.train_batch(prompt_token_ids, group_size=4)
+```
+
+Trainer 在生成、old-policy log-prob 计算和本次更新期间统一关闭 dropout，保证 PPO ratio 的 old/new log-prob 来自相同 dropout 设置；更新结束后恢复 policy 的原始 train/eval 模式。Trainer 每个 batch 执行一次 optimizer update，旧策略 log-prob 随本次 batch 固定；如需多个 PPO epoch，应在此基础上自行实现固定 rollout 上的 minibatch schedule，不能在每次参数更新后重复把更新后的策略当作同一个 rollout 的 old policy。
