@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import gymnasium as gym
 
-from algorithms.value_based.advanced_dqn import PrioritizedReplayBuffer
+from algorithms.value_based.advanced_dqn import PrioritizedReplayBuffer, NStepAccumulator
 from algorithms.value_based.rainbow_agent import RainbowAgent
 
 
@@ -25,6 +25,7 @@ def main():
     agent = RainbowAgent(len(state), env.action_space.n, atom_count=51,
                          value_min=-10, value_max=10)
     replay = PrioritizedReplayBuffer(args.capacity)
+    n_step = NStepAccumulator(replay, n=3, gamma=agent.gamma)
     total_steps = 0
 
     for episode in range(args.episodes):
@@ -35,7 +36,7 @@ def main():
             action = agent.act(state)
             next_state, reward, terminated, truncated, _ = env.step(action)
             # Gymnasium truncation is a time limit, not an MDP terminal.
-            replay.add(state, action, reward, next_state, terminated)
+            n_step.add(state, action, reward, next_state, terminated, truncated)
             state = next_state
             episode_return += reward
             total_steps += 1
