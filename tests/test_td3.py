@@ -17,6 +17,8 @@ def test_td3_update_runs():
     metrics = agent.update(replay, batch_size=8)
     assert np.isfinite(metrics["critic_loss"])
     assert np.isfinite(metrics["actor_loss"])
+    assert all(parameter.grad is None for parameter in agent.q1.parameters())
+    assert all(parameter.grad is None for parameter in agent.q2.parameters())
 
 
 def test_td3_rejects_invalid_hyperparameters_and_action_bounds():
