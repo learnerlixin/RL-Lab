@@ -10,7 +10,7 @@
 | 深度价值 | DQN、Double DQN、Dueling、PER、Rainbow（C51、NoisyNet、n-step） | Agent、测试、CartPole 示例 |
 | Policy Gradient | REINFORCE、Actor-Critic、GAE、A2C、离散 PPO、连续 tanh-Gaussian PPO | 算法组件、测试、训练示例 |
 | 连续控制 | DDPG、SAC、TD3 | Agent、测试、Pendulum 示例 |
-| Offline RL | Behavior Cloning、IQL、AWR、离散 CQL、连续 CQL critic 更新 | Loss、训练步骤、数据集工具、测试 |
+| Offline RL | Behavior Cloning、IQL Agent、AWR train step、离散 CQL critic step、连续 CQL Agent | Agent、训练步骤、数据集工具、Pendulum/CartPole 示例、测试 |
 | LLM RL | Bradley–Terry Reward Model、DPO、token-level PPO + GAE/Value head、GRPO rollout preparation | Objective、训练步骤、批次构造、测试 |
 | 实验基础设施 | 随机种子、CSV 日志、Checkpoint、策略评估 | 工具、测试、文档 |
 
@@ -61,6 +61,7 @@ python examples/train_sac_pendulum.py
 # Offline RL
 python examples/train_bc_cartpole.py --episodes 80 --epochs 30
 python examples/train_iql_pendulum.py --episodes 40 --epochs 10
+python examples/train_cql_pendulum.py --episodes 40 --epochs 10
 ```
 
 BC 示例收集一个简单控制器生成的 CartPole 演示数据；IQL 示例展示 NPZ 离线 transition dataset 和训练循环，默认数据由随机 Pendulum 策略采集。后者是管线示例，不是性能 benchmark，也不保证随机数据能学出高回报策略。
@@ -72,7 +73,7 @@ BC 示例收集一个简单控制器生成的 CartPole 演示数据；IQL 示例
 - BC：离散动作交叉熵、连续动作 MSE、统一 optimizer step。
 - IQL：连续动作高斯策略、双 Q、expectile value、target Q、advantage-weighted policy update。
 - AWR：带 advantage 权重的 actor 更新和 value regression step。
-- CQL：离散 Q penalty/critic step；连续动作采样候选 CQL penalty/critic step。连续 action sampling 和 TD target 由调用方提供。
+- CQL：离散 Q penalty/critic step；连续 CQL Agent 集成 SAC-style actor/twin critics、随机/策略候选动作采样、密度校正和 conservative update。独立连续 critic helper 仍允许调用方提供候选动作与 TD target。
 
 完整 API 与简化假设见 `docs/27_offline_rl_training.md`。
 
