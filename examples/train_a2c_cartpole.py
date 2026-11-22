@@ -11,6 +11,8 @@ from utils import CSVLogger, evaluate_policy, save_checkpoint, seed_everything
 
 
 def main(episodes=500, seed=7, run_dir="runs/a2c_cartpole", eval_interval=20):
+    if episodes <= 0 or eval_interval <= 0:
+        raise ValueError("episodes and eval_interval must be positive")
     seed_everything(seed)
     run_path = Path(run_dir)
     run_path.mkdir(parents=True, exist_ok=True)
@@ -21,6 +23,8 @@ def main(episodes=500, seed=7, run_dir="runs/a2c_cartpole", eval_interval=20):
     agent = A2CAgent(env.observation_space.shape[0], env.action_space.n)
     buffer = RolloutBuffer(capacity=5000)
     total_steps = 0
+    episode_returns = []
+    evaluation_returns = []
     fields = ["episode", "steps", "train_return", "eval_mean_return",
               "loss", "policy_loss", "value_loss", "entropy"]
     with CSVLogger(run_path / "metrics.csv", fields) as logger:
@@ -51,6 +55,7 @@ def main(episodes=500, seed=7, run_dir="runs/a2c_cartpole", eval_interval=20):
                 rollout["observations"], rollout["actions"].long(), rollout["returns"])
             buffer.clear()
 
+            episode_returns.append(episode_return)
             eval_return = float("nan")
             if (episode + 1) % eval_interval == 0:
                 evaluation = evaluate_policy(
@@ -58,6 +63,7 @@ def main(episodes=500, seed=7, run_dir="runs/a2c_cartpole", eval_interval=20):
                     seed=seed + 1_000_000 + episode * 5,
                 )
                 eval_return = evaluation["mean_return"]
+                evaluation_returns.append(eval_return)
             logger.log({
                 "episode": episode + 1,
                 "steps": total_steps,
@@ -80,13 +86,23 @@ def main(episodes=500, seed=7, run_dir="runs/a2c_cartpole", eval_interval=20):
                 )
 
     if episodes % eval_interval:
-        save_checkpoint(
-            run_path / "latest.pt", agent.network, agent.optimizer,
-            step=total_steps,
-            metadata={"algorithm": "A2C", "episode": episodes, "seed": seed},
+        evaluation = evaluate_policy(
+            eval_env, agent, episodes=5, deterministic=True,
+            seed=seed + 1_000_000 + episodes * 5,
         )
+        evaluation_returns.append(evaluation["mean_return"])
+    save_checkpoint(
+        run_path / "latest.pt", agent.network, agent.optimizer,
+        step=total_steps,
+        metadata={"algorithm": "A2C", "episode": episodes, "seed": seed},
+    )
     env.close()
     eval_env.close()
+    return {
+        "mean_train_return": float(np.mean(episode_returns)),
+        "mean_eval_return": float(np.mean(evaluation_returns)),
+        "total_steps": total_steps,
+    }
 
 
 if __name__ == "__main__":
