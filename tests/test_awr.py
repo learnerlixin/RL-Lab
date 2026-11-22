@@ -7,7 +7,8 @@ from algorithms.offline_rl.awr import awr_policy_loss, awr_value_loss, awr_weigh
 def test_awr_weights_are_detached_and_capped():
     advantages = torch.tensor([-1.0, 0.0, 100.0], requires_grad=True)
     weights = awr_weights(advantages, temperature=1.0, max_weight=5.0)
-    assert torch.allclose(weights, torch.tensor([torch.exp(torch.tensor(-1.0)), 1.0, 5.0]))
+    expected = torch.tensor([0.36787945, 1.0, 5.0])
+    assert torch.allclose(weights, expected)
     assert not weights.requires_grad
 
 
