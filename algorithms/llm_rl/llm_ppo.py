@@ -96,8 +96,14 @@ def llm_ppo_value_step(value_model, optimizer, input_ids, attention_mask,
         raise TypeError("value model output must be a tensor")
     if predictions.ndim == 3 and predictions.shape[-1] == 1:
         predictions = predictions.squeeze(-1)
+    if predictions.ndim == 2 and value_targets.ndim == 2 and (
+            predictions.shape[0] == value_targets.shape[0]
+            and predictions.shape[1] == value_targets.shape[1] + 1):
+        # Causal value at input position t predicts the state value used for
+        # the action/log-prob at t; the final output is bootstrap-only.
+        predictions = predictions[:, :-1]
     if predictions.shape != value_targets.shape or value_mask.shape != value_targets.shape:
-        raise ValueError("predictions, value_targets and value_mask must have matching [B,L] shapes")
+        raise ValueError("predictions, value_targets and value_mask must align on [B,T]")
     mask = value_mask.to(device=predictions.device, dtype=predictions.dtype)
     if mask.sum() <= 0:
         raise ValueError("value_mask must contain at least one valid token")
