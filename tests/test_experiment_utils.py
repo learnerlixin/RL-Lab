@@ -82,3 +82,37 @@ def test_evaluate_policy_uses_deterministic_agent_argument():
             return 0
     result = evaluate_policy(TinyEnv(), Agent(), episodes=1)
     assert result["mean_return"] == 2.0
+
+
+def test_evaluate_policy_supports_actor_critic_tuple_outputs_and_restores_mode():
+    from algorithms.policy_based.actor_critic import ActorCritic
+
+    class DiscreteActionEnv(TinyEnv):
+        def step(self, action):
+            assert isinstance(action, (int, np.integer))
+            return super().step(action)
+
+    policy = ActorCritic(1, 2)
+    policy.train()
+    result = evaluate_policy(DiscreteActionEnv(), policy, episodes=2,
+                             deterministic=True)
+    assert result["mean_return"] == 2.0
+    assert policy.training is True
+    assert all(parameter.grad is None for parameter in policy.parameters())
+
+
+def test_evaluate_policy_supports_continuous_actor_critic_tuple_outputs():
+    from algorithms.policy_based.continuous_ppo import ContinuousActorCritic
+
+    class ContinuousActionEnv(TinyEnv):
+        def step(self, action):
+            assert isinstance(action, np.ndarray)
+            assert action.shape == (2,)
+            assert np.isfinite(action).all()
+            return super().step(action)
+
+    policy = ContinuousActorCritic(1, 2, action_low=[-2.0, -1.0],
+                                   action_high=[2.0, 1.0], hidden_dim=16)
+    result = evaluate_policy(ContinuousActionEnv(), policy, episodes=2,
+                             deterministic=True)
+    assert result["mean_length"] == 2.0
