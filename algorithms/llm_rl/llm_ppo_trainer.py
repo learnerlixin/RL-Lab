@@ -203,7 +203,11 @@ class LLMPPOTrainer:
                         mb_old_logps, mb_advantages,
                         clip_range=self.clip_range,
                         reference_token_logps=mb_reference_logps,
-                        kl_coef=self.kl_coef,
+                        # With a frozen reference, KL is already included in
+                        # shaped_rewards/GAE. Avoid adding the same penalty again
+                        # to the actor loss. Without one, constrain updates to
+                        # the old-policy snapshot captured by this rollout.
+                        kl_coef=(0.0 if self.reference_model is not None else self.kl_coef),
                         max_grad_norm=self.max_grad_norm,
                     )
                     aggregate["policy_loss"] += policy_metrics["loss"]
