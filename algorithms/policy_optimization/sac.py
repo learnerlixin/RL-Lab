@@ -9,6 +9,24 @@ from torch.distributions import Normal
 LOG_STD_MIN, LOG_STD_MAX = -20.0, 2.0
 
 
+def _validated_action_bounds(action_dim, action_low, action_high):
+    """Return finite per-dimension action bounds, broadcasting scalar inputs."""
+    if action_dim <= 0:
+        raise ValueError("action_dim must be positive")
+    low = torch.as_tensor(action_low, dtype=torch.float32)
+    high = torch.as_tensor(action_high, dtype=torch.float32)
+    try:
+        low = torch.broadcast_to(low, (action_dim,)).clone()
+        high = torch.broadcast_to(high, (action_dim,)).clone()
+    except RuntimeError as error:
+        raise ValueError("action bounds must be scalars or match action_dim") from error
+    if not torch.isfinite(low).all() or not torch.isfinite(high).all():
+        raise ValueError("action bounds must be finite")
+    if torch.any(high <= low):
+        raise ValueError("action_high must be greater than action_low")
+    return low, high
+
+
 class GaussianActor(nn.Module):
     def __init__(self, observation_dim, action_dim, action_low=-1.0, action_high=1.0, hidden_dim=256):
         super().__init__()
@@ -16,8 +34,7 @@ class GaussianActor(nn.Module):
                                   nn.Linear(hidden_dim, hidden_dim), nn.ReLU())
         self.mean = nn.Linear(hidden_dim, action_dim)
         self.log_std = nn.Linear(hidden_dim, action_dim)
-        low = torch.as_tensor(action_low, dtype=torch.float32)
-        high = torch.as_tensor(action_high, dtype=torch.float32)
+        low, high = _validated_action_bounds(action_dim, action_low, action_high)
         self.register_buffer("action_scale", (high - low) / 2.0)
         self.register_buffer("action_bias", (high + low) / 2.0)
 
@@ -54,12 +71,30 @@ class ContinuousReplayBuffer:
     """Replay buffer preserving vector-valued continuous actions."""
     def __init__(self, capacity=1_000_000):
         from collections import deque
+        if not isinstance(capacity, int) or capacity <= 0:
+            raise ValueError("capacity must be a positive integer")
         self.data = deque(maxlen=capacity)
 
     def add(self, state, action, reward, next_state, terminated):
-        self.data.append((np.asarray(state, dtype=np.float32),
-                          np.asarray(action, dtype=np.float32), float(reward),
-                          np.asarray(next_state, dtype=np.float32), float(terminated)))
+        state = np.asarray(state, dtype=np.float32)
+        action = np.asarray(action, dtype=np.float32)
+        next_state = np.asarray(next_state, dtype=np.float32)
+        reward = float(reward)
+        terminal = float(terminated)
+        if state.ndim != 1 or next_state.shape != state.shape or action.ndim != 1:
+            raise ValueError("replay transitions require vector state/action and matching next_state")
+        if not np.isfinite(state).all() or not np.isfinite(next_state).all():
+            raise ValueError("replay observations must be finite")
+        if not np.isfinite(action).all() or not np.isfinite(reward):
+            raise ValueError("replay actions and rewards must be finite")
+        if terminal not in (0.0, 1.0):
+            raise ValueError("terminated must be a boolean/binary value")
+        if self.data:
+            old_state, old_action = self.data[0][0], self.data[0][1]
+            if state.shape != old_state.shape or action.shape != old_action.shape:
+                raise ValueError("replay observation/action shapes must remain consistent")
+        self.data.append((state.copy(), action.copy(), reward,
+                          next_state.copy(), terminal))
 
     def sample(self, batch_size):
         import random
@@ -77,6 +112,10 @@ class SACAgent:
     def __init__(self, observation_dim, action_dim, action_low=-1.0, action_high=1.0,
                  learning_rate=3e-4, gamma=0.99, tau=0.005, alpha=0.2,
                  automatic_entropy=True, device="cpu"):
+        if learning_rate <= 0 or not 0.0 <= gamma <= 1.0 or not 0.0 < tau <= 1.0:
+            raise ValueError("learning_rate must be positive, gamma in [0,1], tau in (0,1]")
+        if alpha <= 0:
+            raise ValueError("alpha must be positive")
         self.device = torch.device(device)
         self.actor = GaussianActor(observation_dim, action_dim, action_low, action_high).to(self.device)
         self.q1 = QNetwork(observation_dim, action_dim).to(self.device)
