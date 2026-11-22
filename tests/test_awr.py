@@ -80,3 +80,9 @@ def test_awr_agent_updates_policy_and_respects_action_bounds():
     action = agent.act([0.0, 0.0, 0.0])
     assert -2.0 <= action[0] <= 2.0
     assert -1.0 <= action[1] <= 1.0
+
+def test_awr_agent_rejects_nonpositive_learning_rate():
+    import pytest
+    from algorithms.offline_rl.awr import AWRAgent
+    with pytest.raises(ValueError):
+        AWRAgent(3, 2, learning_rate=0.0)
