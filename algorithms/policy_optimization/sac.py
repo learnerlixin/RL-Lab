@@ -50,6 +50,28 @@ class QNetwork(nn.Module):
         return self.net(torch.cat([states, actions], dim=-1))
 
 
+class ContinuousReplayBuffer:
+    """Replay buffer preserving vector-valued continuous actions."""
+    def __init__(self, capacity=1_000_000):
+        from collections import deque
+        self.data = deque(maxlen=capacity)
+
+    def add(self, state, action, reward, next_state, terminated):
+        self.data.append((np.asarray(state, dtype=np.float32),
+                          np.asarray(action, dtype=np.float32), float(reward),
+                          np.asarray(next_state, dtype=np.float32), float(terminated)))
+
+    def sample(self, batch_size):
+        import random
+        batch = random.sample(self.data, batch_size)
+        states, actions, rewards, next_states, terminals = zip(*batch)
+        return (np.stack(states), np.stack(actions), np.asarray(rewards, dtype=np.float32),
+                np.stack(next_states), np.asarray(terminals, dtype=np.float32))
+
+    def __len__(self):
+        return len(self.data)
+
+
 class SACAgent:
     """Twin-critic SAC with entropy-temperature tuning."""
     def __init__(self, observation_dim, action_dim, action_low=-1.0, action_high=1.0,
