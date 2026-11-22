@@ -16,7 +16,7 @@
 | 策略梯度 | REINFORCE、Actor-Critic、GAE、同步 A2C | 实现 + 测试 |
 | 策略优化 | 离散动作 PPO minibatch update | 实现 + 测试 |\n| 策略优化 | 连续动作 PPO（tanh Gaussian Actor-Critic、动作边界与 log-prob 修正） | 实现 + 测试 |
 | 连续控制 | SAC、TD3（双 Q、target 网络、连续动作策略） | 实现 + 测试 |
-| 离线 RL | IQL expectile、Q target、advantage-weighted BC、离散 CQL penalty | 目标函数组件 + 测试 |
+| 离线 RL | IQL expectile、Q target、advantage-weighted BC、AWR weighted regression、离散 CQL penalty | 目标函数组件 + 测试 |
 | LLM RL | Bradley–Terry loss、DPO objective | 实现 + 测试 |
 | LLM RL | token-level PPO update、KL-shaped reward、GRPO clipped objective 与组内优势 | 训练组件 + 测试 |
 | LLM RL | Masked pooling Reward Model head | 模型头组件 + 测试 |
@@ -28,7 +28,7 @@
 - `algorithms/value_based/`：DQN、Double DQN、Rainbow。
 - `algorithms/policy_based/`：REINFORCE、Actor-Critic、A2C、GAE、离散 / 连续动作 PPO。
 - `algorithms/policy_optimization/`：SAC、TD3。
-- `algorithms/offline_rl/`：IQL、CQL 核心目标函数。
+- `algorithms/offline_rl/`：IQL、AWR、CQL 核心目标函数。
 - `algorithms/llm_rl/`：偏好优化、奖励模型头、PPO/GRPO 目标函数与训练步骤。
 - `docs/`：数学原理、公式推导、算法差异和实现边界。
 - `examples/`：小型可运行示例。
