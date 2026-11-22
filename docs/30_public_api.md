@@ -15,7 +15,7 @@ from algorithms.tabular import (
 
 ```python
 from algorithms.value_based import DQNAgent, DoubleDQNAgent, RainbowAgent
-from algorithms.policy_based import A2CAgent, ActorCritic, ppo_update
+from algorithms.policy_based import A2CAgent, ActorCritic, RolloutBuffer, ppo_update
 from algorithms.policy_optimization import DDPGAgent, SACAgent, TD3Agent
 ```
 
@@ -32,10 +32,16 @@ from algorithms.offline_rl import (
 
 ```python
 from algorithms.llm_rl import (
-    RewardModelHead, dpo_train_step, grpo_train_step,
+    RewardModelHead, GRPOTrainer, dpo_train_step, grpo_train_step,
     collect_grouped_rollouts, prepare_grpo_batch,
     token_level_gae, llm_ppo_policy_step, llm_ppo_value_step,
 )
+```
+
+实验工具可从 utils 导入：
+
+```python
+from utils import run_seed_sweep, summarize_seed_results
 ```
 
 公开导出是便利入口，不代表所有模块具有相同抽象层级。Objective 函数、训练步骤、完整 Agent 仍需分别阅读各自文档，确认输入形状、终止状态语义和调用方责任。
