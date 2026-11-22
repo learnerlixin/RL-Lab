@@ -51,7 +51,7 @@ class PrioritizedReplayBuffer:
         self.priorities[self.position] = max_priority
         self.position = (self.position + 1) % self.capacity
 
-    def sample(self, batch_size, beta=0.4):
+    def sample(self, batch_size, beta=0.4, include_discounts=False):
         if not 0 <= beta <= 1 or not 0 < batch_size <= len(self.data):
             raise ValueError("invalid batch_size or beta")
         scaled = self.priorities[:len(self.data)] ** self.alpha
@@ -61,10 +61,13 @@ class PrioritizedReplayBuffer:
         weights /= weights.max()
         batch = [self.data[i] for i in indices]
         states, actions, rewards, next_states, terminals, discounts = zip(*batch)
-        return (np.stack(states), np.asarray(actions), np.asarray(rewards, dtype=np.float32),
-                np.stack(next_states), np.asarray(terminals, dtype=np.float32),
-                np.asarray([np.nan if d is None else d for d in discounts], dtype=np.float32),
-                indices, weights.astype(np.float32))
+        base = (np.stack(states), np.asarray(actions), np.asarray(rewards, dtype=np.float32),
+                np.stack(next_states), np.asarray(terminals, dtype=np.float32))
+        if not include_discounts:
+            return base + (indices, weights.astype(np.float32))
+        discount_array = np.asarray([np.nan if d is None else d for d in discounts],
+                                    dtype=np.float32)
+        return base + (discount_array, indices, weights.astype(np.float32))
 
     def update_priorities(self, indices, priorities):
         if len(indices) != len(priorities):
