@@ -48,6 +48,8 @@ def grpo_train_step(model, optimizer, input_ids, attention_mask,
     Accepts [B,L] or [B,G,L] token batches. In the latter case, old/reference
     log-probs must be [B,G,L-1], and advantages [B,G].
     """
+    if max_grad_norm <= 0:
+        raise ValueError("max_grad_norm must be positive")
     grouped = input_ids.ndim == 3
     if grouped:
         batch, group, length = input_ids.shape
