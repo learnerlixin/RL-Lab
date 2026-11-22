@@ -88,4 +88,4 @@ DPO、LLM-PPO、GRPO 和 Reward Model trainer 提供可复用的目标函数或 
 
 ## 实现原则与后续工作
 
-本仓库以教学实现和模块化训练组件为主，不把简化实现称为论文级或工业级复现。后续仍值得持续加强：标准离线 benchmark 数据接入、完整在线/离线算法对照实验、GRPO rollout pipeline、LLM-PPO critic/GAE 集成、分布式训练、超参数 sweep 与消融测试。
+本仓库以教学实现和模块化训练组件为主，不把简化实现称为论文级或工业级复现。后续仍值得持续加强：标准离线 benchmark 数据接入、完整在线/离线算法对照实验、真实模型生成与 reward pipeline 的端到端编排、分布式训练、超参数 sweep 与消融测试。
