@@ -95,4 +95,4 @@ trainer = GRPOTrainer(
 )
 ```
 
-Adapter 会把同一 prompt 复制成 group batch，调用 model.generate，在返回序列中移除 prompt，只保留 completion，并在首次 EOS 处截断；不依赖 Transformers import，但 model 必须提供兼容的 `generate` 方法。tokenizer 管理、EOS/PAD ID 和 reward callback 仍由调用方提供。
+Adapter 将单条 prompt 以 batch size 1 传入，由 `num_return_sequences=group_size` 让模型生成接口扩展返回组；随后在返回序列中移除 prompt，只保留 completion，并在首次 EOS 处截断。这样不会出现输入 batch 和 `num_return_sequences` 双重扩展导致的 group_size² 输出；不依赖 Transformers import，但 model 必须提供兼容的 `generate` 方法。tokenizer 管理、EOS/PAD ID 和 reward callback 仍由调用方提供。
