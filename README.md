@@ -16,9 +16,9 @@
 | 策略梯度 | REINFORCE、Actor-Critic、GAE | 实现 + 测试 |
 | 策略优化 | 离散动作 PPO minibatch update | 实现 + 测试 |
 | 连续控制 | SAC、TD3（双 Q、target 网络、连续动作策略） | 实现 + 测试 |
-| 离线 RL | IQL expectile、Q target、advantage-weighted BC | 目标函数组件 + 测试 |
+| 离线 RL | IQL expectile、Q target、advantage-weighted BC、离散 CQL penalty | 目标函数组件 + 测试 |
 | LLM RL | Bradley–Terry loss、DPO objective | 实现 + 测试 |
-| LLM RL | PPO clipped objective、GRPO clipped objective、组内优势 | 目标函数组件 + 测试 |
+| LLM RL | token-level PPO update、KL-shaped reward、GRPO clipped objective 与组内优势 | 训练组件 + 测试 |
 | LLM RL | Masked pooling Reward Model head | 模型头组件 + 测试 |
 | LLM RL | Causal LM completion log-prob 与 DPO train step | 训练步骤 + 测试 |
 
