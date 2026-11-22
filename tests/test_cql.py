@@ -2,7 +2,8 @@ import torch
 from torch import nn
 
 from algorithms.offline_rl.cql import (
-    continuous_cql_critic_step, continuous_cql_penalty, discrete_cql_penalty,\n    discrete_cql_critic_step,
+    continuous_cql_critic_step, continuous_cql_penalty, discrete_cql_penalty,
+    discrete_cql_critic_step,
 )
 
 
