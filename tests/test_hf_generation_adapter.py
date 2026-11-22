@@ -28,7 +28,8 @@ class FakeGenerateModel(nn.Module):
             [5, 6, 7],
             [8, 9, 0],
         ], device=input_ids.device)
-        return torch.cat([input_ids, continuations], dim=1)
+        expanded_inputs = input_ids.repeat(num_return_sequences, 1)
+        return torch.cat([expanded_inputs, continuations], dim=1)
 
 
 def test_generation_adapter_batches_prompt_and_stops_at_eos():
