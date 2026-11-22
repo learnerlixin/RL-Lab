@@ -10,6 +10,11 @@ def ppo_update(model, optimizer, states, actions, old_log_probs, returns, advant
     """Optimize one collected rollout; tensors have leading sample dimension."""
     if clip_range <= 0 or epochs <= 0 or batch_size <= 0:
         raise ValueError("clip_range, epochs and batch_size must be positive")
+    if value_coef < 0 or entropy_coef < 0 or states.shape[0] == 0:
+        raise ValueError("loss coefficients must be nonnegative and rollout non-empty")
+    if not (actions.shape[0] == old_log_probs.shape[0] == returns.shape[0]
+            == advantages.shape[0] == states.shape[0]):
+        raise ValueError("all rollout tensors must share the leading dimension")
     advantages = (advantages - advantages.mean()) / (advantages.std(unbiased=False) + 1e-8)
     size = states.shape[0]
     metrics = {"policy_loss": 0.0, "value_loss": 0.0, "entropy": 0.0}
