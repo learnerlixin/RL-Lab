@@ -10,8 +10,7 @@ class NoisyLinear(nn.Module):
         super().__init__()
         self.in_features, self.out_features = in_features, out_features
         self.weight_mu = nn.Parameter(torch.empty(out_features, in_features))
-        self.weight_sigma = nn.Parameter(torch.full((out_features, in_features),
-                                                    sigma0 / in_features ** 0.5))
+        self.weight_sigma = nn.Parameter(torch.full((out_features, in_features), sigma0 / in_features ** 0.5))
         self.register_buffer("weight_epsilon", torch.zeros(out_features, in_features))
         self.bias_mu = nn.Parameter(torch.empty(out_features))
         self.bias_sigma = nn.Parameter(torch.full((out_features,), sigma0 / out_features ** 0.5))
@@ -37,9 +36,8 @@ class NoisyLinear(nn.Module):
         self.bias_epsilon.copy_(eps_out)
 
     def forward(self, x):
-        weight = self.weight_mu + self.weight_sigma * self.weight_epsilon
-        bias = self.bias_mu + self.bias_sigma * self.bias_epsilon
-        return F.linear(x, weight, bias)
+        return F.linear(x, self.weight_mu + self.weight_sigma * self.weight_epsilon,
+                        self.bias_mu + self.bias_sigma * self.bias_epsilon)
 
 
 class CategoricalQNetwork(nn.Module):
@@ -61,17 +59,22 @@ class CategoricalQNetwork(nn.Module):
         return torch.softmax(logits, dim=-1)
 
     def q_values(self, states):
-        probabilities = self(states)
-        return (probabilities * self.support).sum(dim=-1)
+        return (self(states) * self.support).sum(dim=-1)
 
 
 def categorical_projection(next_probabilities, rewards, terminals, gamma,
                            support, value_min, value_max):
-    """Project Bellman-shifted categorical probabilities onto fixed C51 support."""
+    """Project Bellman-shifted distributions; gamma may be scalar or [batch]."""
     atom_count = support.numel()
     delta_z = (value_max - value_min) / (atom_count - 1)
     batch_size = rewards.shape[0]
-    target_atoms = rewards.unsqueeze(1) + gamma * (1.0 - terminals.unsqueeze(1)) * support.unsqueeze(0)
+    if torch.is_tensor(gamma):
+        discounts = gamma.to(device=rewards.device, dtype=rewards.dtype).reshape(-1, 1)
+        if discounts.shape[0] != batch_size:
+            raise ValueError("batched gamma must have one value per transition")
+    else:
+        discounts = float(gamma)
+    target_atoms = rewards.unsqueeze(1) + discounts * (1.0 - terminals.unsqueeze(1)) * support.unsqueeze(0)
     target_atoms = target_atoms.clamp(value_min, value_max)
     positions = (target_atoms - value_min) / delta_z
     lower, upper = positions.floor().long(), positions.ceil().long()
@@ -83,10 +86,8 @@ def categorical_projection(next_probabilities, rewards, terminals, gamma,
     same = lower == upper
     lower_weight = torch.where(same, torch.ones_like(lower_weight), lower_weight)
     upper_weight = torch.where(same, torch.zeros_like(upper_weight), upper_weight)
-    flat.index_add_(0, (lower + offset).reshape(-1),
-                    (next_probabilities * lower_weight).reshape(-1))
-    flat.index_add_(0, (upper + offset).reshape(-1),
-                    (next_probabilities * upper_weight).reshape(-1))
+    flat.index_add_(0, (lower + offset).reshape(-1), (next_probabilities * lower_weight).reshape(-1))
+    flat.index_add_(0, (upper + offset).reshape(-1), (next_probabilities * upper_weight).reshape(-1))
     return projected
 
 
