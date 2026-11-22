@@ -63,8 +63,8 @@ class PrioritizedReplayBuffer:
         states, actions, rewards, next_states, terminals, discounts = zip(*batch)
         return (np.stack(states), np.asarray(actions), np.asarray(rewards, dtype=np.float32),
                 np.stack(next_states), np.asarray(terminals, dtype=np.float32),
-                indices, weights.astype(np.float32),
-                np.asarray([np.nan if d is None else d for d in discounts], dtype=np.float32))
+                np.asarray([np.nan if d is None else d for d in discounts], dtype=np.float32),
+                indices, weights.astype(np.float32))
 
     def update_priorities(self, indices, priorities):
         if len(indices) != len(priorities):
