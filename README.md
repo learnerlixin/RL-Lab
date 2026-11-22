@@ -64,6 +64,7 @@ python examples/tabular_control.py
 python examples/train_dqn_cartpole.py
 python examples/train_ppo_cartpole.py
 python examples/train_a2c_cartpole.py --episodes 500
+python examples/sweep_a2c_cartpole.py --seeds 0 1 2 3 4 --episodes 300
 python examples/train_rainbow_cartpole.py --episodes 300
 
 # Continuous control
