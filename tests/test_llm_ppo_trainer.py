@@ -90,3 +90,34 @@ def test_llm_ppo_trainer_rejects_bad_ppo_schedule_and_empty_prompts():
         generate, reward, pad_token_id=0)
     with pytest.raises(ValueError):
         trainer.train_batch([])
+
+
+def test_llm_ppo_trainer_uses_reference_kl_only_once():
+    from unittest.mock import patch
+    policy = TinyCausalLM()
+    value_model = TinyValueModel()
+    reference = deepcopy(policy)
+    trainer = LLMPPOTrainer(
+        policy, value_model,
+        torch.optim.Adam(policy.parameters(), lr=1e-3),
+        torch.optim.Adam(value_model.parameters(), lr=1e-3),
+        generate_fn=lambda model, prompt, limit: [7, 9],
+        reward_fn=lambda prompt, completion: 1.0,
+        pad_token_id=0, eos_token_id=9,
+        reference_model=reference, kl_coef=0.05,
+    )
+    seen = []
+    original_step = __import__(
+        "algorithms.llm_rl.llm_ppo", fromlist=["llm_ppo_policy_step"]
+    ).llm_ppo_policy_step
+
+    def wrapped_step(*args, **kwargs):
+        seen.append(kwargs["kl_coef"])
+        return original_step(*args, **kwargs)
+
+    with patch("algorithms.llm_rl.llm_ppo_trainer.llm_ppo_policy_step",
+               side_effect=wrapped_step):
+        metrics = trainer.train_batch([[1, 2]], max_new_tokens=2)
+    assert seen == [0.0]
+    assert torch.isfinite(torch.tensor(metrics["approx_kl"]))
+    assert metrics["approx_kl"] >= 0.0
