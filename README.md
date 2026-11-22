@@ -11,8 +11,8 @@
 | 表格型 | First-visit Monte Carlo、TD(0) prediction | 实现 + 测试 |
 | 表格型 | epsilon-greedy、SARSA、Q-learning | 实现 + 测试 |
 | 深度价值 | DQN、Replay Buffer、Target Network | 实现 + 测试 |
-| 深度价值 | Double DQN、Dueling 网络、Prioritized Replay primitives | 实现 + 测试 |
-| 深度价值 | Rainbow 构件：NoisyLinear、C51 投影、n-step return | 组件 + 测试 |
+| 深度价值 | Double DQN、Dueling 网络、Prioritized Replay | 实现 + 测试 |
+| 深度价值 | Rainbow：C51、Double-DQN target、Dueling、NoisyNet、PER 加权更新 | 集成 Agent + 测试 + CartPole 示例 |
 | 策略梯度 | REINFORCE、Actor-Critic、GAE | 实现 + 测试 |
 | 策略优化 | 离散动作 PPO minibatch update | 实现 + 测试 |
 | 连续控制 | SAC、TD3（双 Q、target 网络、连续动作策略） | 实现 + 测试 |
@@ -25,10 +25,10 @@
 ## 目录
 
 - `algorithms/tabular/`：动态规划、Monte Carlo、TD prediction/control。
-- `algorithms/value_based/`：DQN 与扩展 DQN 组件。
+- `algorithms/value_based/`：DQN、Double DQN、Rainbow。
 - `algorithms/policy_based/`：REINFORCE、Actor-Critic、GAE、PPO。
 - `algorithms/policy_optimization/`：SAC、TD3。
-- `algorithms/offline_rl/`：IQL 核心目标函数。
+- `algorithms/offline_rl/`：IQL、CQL 核心目标函数。
 - `algorithms/llm_rl/`：偏好优化、奖励模型头、PPO/GRPO 目标函数。
 - `docs/`：数学原理、公式推导、算法差异和实现边界。
 - `examples/`：小型可运行示例。
@@ -51,11 +51,21 @@ pip install -r requirements.txt
 pytest -q
 ```
 
+## 示例
+
+```bash
+python examples/tabular_control.py
+python examples/train_dqn_cartpole.py
+python examples/train_ppo_cartpole.py
+python examples/train_sac_pendulum.py
+python examples/train_rainbow_cartpole.py --episodes 300
+```
+
 ## 学习顺序
 
 1. 阅读 `docs/01_mdp_and_bellman.md` 和 `docs/02_td_control.md`。
 2. 运行 `examples/tabular_control.py`，理解 SARSA 与 Q-learning。
-3. 学习 DP、MC、TD，再阅读 DQN 与 Double DQN。
+3. 学习 DP、MC、TD，再阅读 DQN、Double DQN 和 Rainbow。
 4. 从 REINFORCE 过渡到 Actor-Critic、GAE 和 PPO。
 5. 阅读 LLM 偏好优化文档，理解 Reward Model、DPO、PPO、GRPO 的联系与区别。
 
@@ -71,6 +81,6 @@ pytest -q
 
 每个算法尽量遵循：问题定义 → 数学目标 → 公式推导 → 核心实现 → 单元测试 → 实验与局限。任何简化都会在文档中说明，不把教学实现包装成论文级或工业级复现。
 
-## Roadmap
+## 当前限制与 Roadmap
 
-后续扩展方向包括完整集成 RainbowAgent、更多离线 RL 方法、连续动作 PPO、LLM rollout/GRPO 训练框架适配、算法基准实验和消融分析。
+Rainbow Agent 已集成 C51、Double-DQN 动作选择、Dueling、NoisyNet 和 PER 重要性采样更新。当前 n-step return helper 尚未接入统一的 n-step replay accumulator；PER 使用 O(N) 采样，适合教学而非大规模训练。后续还将补齐连续动作 PPO、更多离线 RL 算法、完整 GRPO rollout/trainer 适配、实验日志与 checkpoint、基准测试和消融实验。
