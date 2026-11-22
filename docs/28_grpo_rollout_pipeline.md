@@ -88,11 +88,11 @@ trainer = GRPOTrainer(
             pad_token_id=tokenizer.pad_token_id,
             eos_token_id=tokenizer.eos_token_id,
             max_new_tokens=128,
-            generation_kwargs={"do_sample": True, "temperature": 0.8, "top_p": 0.95},
+            generation_kwargs={"do_sample": True},
         ),
     reward_fn=score_completion,
     pad_token_id=tokenizer.pad_token_id,
 )
 ```
 
-Adapter 将单条 prompt 以 batch size 1 传入，由 `num_return_sequences=group_size` 让模型生成接口扩展返回组；随后在返回序列中移除 prompt，只保留 completion，并在首次 EOS 处截断。这样不会出现输入 batch 和 `num_return_sequences` 双重扩展导致的 group_size² 输出；不依赖 Transformers import，但 model 必须提供兼容的 `generate` 方法。tokenizer 管理、EOS/PAD ID 和 reward callback 仍由调用方提供。
+Adapter 将单条 prompt 以 batch size 1 传入，由 `num_return_sequences=group_size` 让模型生成接口扩展返回组；随后在返回序列中移除 prompt，只保留 completion，并在首次 EOS 处截断。这样不会出现输入 batch 和 `num_return_sequences` 双重扩展导致的 group_size² 输出；不依赖 Transformers import，但 model 必须提供兼容的 `generate` 方法。**重要：** GRPO trainer 重新用模型原始 softmax 计算 old log-prob；采样时若使用 temperature、top-k 或 top-p 改变 token 分布，必须同步计算经相同采样变换后的 log-prob，否则 PPO ratio 不是行为策略的正确重要性比率。tokenizer 管理、EOS/PAD ID 和 reward callback 仍由调用方提供。
