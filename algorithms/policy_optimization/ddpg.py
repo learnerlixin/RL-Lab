@@ -71,11 +71,18 @@ class DDPGAgent:
         self.critic_optimizer.zero_grad(set_to_none=True)
         critic_loss.backward()
         self.critic_optimizer.step()
+        self.critic_optimizer.zero_grad(set_to_none=True)
 
-        actor_loss = -self.critic(states, self.actor(states)).mean()
-        self.actor_optimizer.zero_grad(set_to_none=True)
-        actor_loss.backward()
-        self.actor_optimizer.step()
+        for parameter in self.critic.parameters():
+            parameter.requires_grad_(False)
+        try:
+            actor_loss = -self.critic(states, self.actor(states)).mean()
+            self.actor_optimizer.zero_grad(set_to_none=True)
+            actor_loss.backward()
+            self.actor_optimizer.step()
+        finally:
+            for parameter in self.critic.parameters():
+                parameter.requires_grad_(True)
 
         self._soft_update(self.target_actor, self.actor)
         self._soft_update(self.target_critic, self.critic)
