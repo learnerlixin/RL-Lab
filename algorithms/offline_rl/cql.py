@@ -20,6 +20,43 @@ def discrete_cql_penalty(all_action_q_values, dataset_action_q_values, temperatu
     return conservative_gap.mean()
 
 
+
+def discrete_cql_critic_loss(q_network, states, dataset_actions, td_targets,
+                             conservative_weight=1.0, temperature=1.0):
+    """Combine discrete-action TD regression and conservative regularization."""
+    if conservative_weight < 0:
+        raise ValueError("conservative_weight must be nonnegative")
+    all_q = q_network(states)
+    if all_q.ndim != 2 or all_q.shape[0] != dataset_actions.shape[0]:
+        raise ValueError("Q network must return [B, action_count]")
+    data_q = all_q.gather(1, dataset_actions.long().reshape(-1, 1)).squeeze(-1)
+    targets = td_targets.detach().reshape(-1)
+    if data_q.shape != targets.shape:
+        raise ValueError("td_targets must contain one target per transition")
+    td_loss = F.mse_loss(data_q, targets)
+    conservative_loss = discrete_cql_penalty(all_q, data_q, temperature)
+    total = td_loss + conservative_weight * conservative_loss
+    return total, {"td_loss": td_loss.detach(),
+                   "conservative_loss": conservative_loss.detach(),
+                   "q_data": data_q.detach().mean()}
+
+
+def discrete_cql_critic_step(q_network, optimizer, states, dataset_actions, td_targets,
+                             conservative_weight=1.0, temperature=1.0,
+                             max_grad_norm=1.0):
+    """Apply one discrete CQL Q-network update."""
+    if max_grad_norm <= 0:
+        raise ValueError("max_grad_norm must be positive")
+    loss, components = discrete_cql_critic_loss(
+        q_network, states, dataset_actions, td_targets,
+        conservative_weight, temperature)
+    optimizer.zero_grad(set_to_none=True)
+    loss.backward()
+    grad_norm = torch.nn.utils.clip_grad_norm_(q_network.parameters(), max_grad_norm)
+    optimizer.step()
+    return {"loss": float(loss.detach()), "grad_norm": float(grad_norm.detach()),
+            **{key: float(value) for key, value in components.items()}}
+
 def _candidate_q_values(q_function, states, candidate_actions):
     if candidate_actions.ndim != 3 or candidate_actions.shape[0] != states.shape[0]:
         raise ValueError("candidate actions must have shape [B,N,A]")
@@ -103,5 +140,5 @@ def continuous_cql_critic_step(critic, optimizer, states, dataset_actions, td_ta
             **{key: float(value) for key, value in components.items()}}
 
 
-__all__ = ["discrete_cql_penalty", "continuous_cql_penalty",
+__all__ = ["discrete_cql_penalty", "discrete_cql_critic_loss", "discrete_cql_critic_step",\n           "continuous_cql_penalty",
            "continuous_cql_critic_loss", "continuous_cql_critic_step"]
