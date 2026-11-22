@@ -58,6 +58,8 @@ pytest -q
 python examples/tabular_control.py
 python examples/train_dqn_cartpole.py
 python examples/train_ppo_cartpole.py
+python examples/train_continuous_ppo_pendulum.py --episodes 300
+python examples/train_ddpg_pendulum.py --episodes 200
 python examples/train_sac_pendulum.py
 python examples/train_rainbow_cartpole.py --episodes 300
 ```
