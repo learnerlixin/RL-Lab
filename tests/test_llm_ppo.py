@@ -80,3 +80,15 @@ def test_llm_ppo_value_step_updates_value_head():
     metrics = llm_ppo_value_step(model, optimizer, ids, attention, targets, mask)
     assert torch.isfinite(torch.tensor(metrics["value_loss"]))
     assert not torch.equal(before, model.head.weight)
+
+
+def test_llm_ppo_value_step_aligns_shifted_gae_targets():
+    model = TinyValueModel()
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    ids = torch.tensor([[1, 2, 3], [2, 4, 5]])
+    attention = torch.ones_like(ids)
+    # GAE returns/mask correspond to the L-1 next-token policy decisions.
+    targets = torch.randn(2, 2)
+    mask = torch.ones_like(targets)
+    metrics = llm_ppo_value_step(model, optimizer, ids, attention, targets, mask)
+    assert torch.isfinite(torch.tensor(metrics["value_loss"]))
