@@ -14,15 +14,20 @@
 | 深度价值 | Double DQN、Dueling 网络、Prioritized Replay primitives | 实现 + 测试 |
 | 策略梯度 | REINFORCE、Actor-Critic、GAE | 实现 + 测试 |
 | 策略优化 | 离散动作 PPO minibatch update | 实现 + 测试 |
+| 连续控制 | SAC、TD3（双 Q、target 网络、连续动作策略） | 实现 + 测试 |
+| 离线 RL | IQL expectile、Q target、advantage-weighted BC | 目标函数组件 + 测试 |
 | LLM RL | Bradley–Terry loss、DPO objective | 实现 + 测试 |
 | LLM RL | PPO clipped objective、GRPO clipped objective、组内优势 | 目标函数组件 + 测试 |
 | LLM RL | Masked pooling Reward Model head | 模型头组件 + 测试 |
+| LLM RL | Causal LM completion log-prob 与 DPO train step | 训练步骤 + 测试 |
 
 ## 目录
 
 - `algorithms/tabular/`：动态规划、Monte Carlo、TD prediction/control。
 - `algorithms/value_based/`：DQN 与扩展 DQN 组件。
 - `algorithms/policy_based/`：REINFORCE、Actor-Critic、GAE、PPO。
+- `algorithms/policy_optimization/`：SAC、TD3。
+- `algorithms/offline_rl/`：IQL 核心目标函数。
 - `algorithms/llm_rl/`：偏好优化、奖励模型头、PPO/GRPO 目标函数。
 - `docs/`：数学原理、公式推导、算法差异和实现边界。
 - `examples/`：小型可运行示例。
@@ -67,4 +72,4 @@ pytest -q
 
 ## Roadmap
 
-后续扩展方向包括 SAC / TD3、更多离线 RL 方法、完整连续动作 PPO/SAC 训练示例、偏好数据训练管线、LLM rollout 训练框架适配、算法基准实验和消融分析。
+后续扩展方向包括 Rainbow、更多离线 RL 方法、连续动作 PPO、可复现的 Gymnasium 端到端训练脚本、LLM rollout/GRPO 训练框架适配、算法基准实验和消融分析。
