@@ -15,11 +15,12 @@
 | 深度价值 | Rainbow：C51、Double-DQN target、Dueling、NoisyNet、PER 加权更新、n-step accumulator | 集成 Agent + 测试 + CartPole 示例 |
 | 策略梯度 | REINFORCE、Actor-Critic、GAE、同步 A2C | 实现 + 测试 |
 | 策略优化 | 离散动作 PPO minibatch update | 实现 + 测试 |\n| 策略优化 | 连续动作 PPO（tanh Gaussian Actor-Critic、动作边界与 log-prob 修正） | 实现 + 测试 |
+| 连续控制 | DDPG（确定性 Actor-Critic、target networks、Polyak 更新） | Agent + 测试 + Pendulum 示例 |
 | 连续控制 | SAC、TD3（双 Q、target 网络、连续动作策略） | 实现 + 测试 |
 | 离线 RL | IQL expectile、Q target、advantage-weighted BC、AWR weighted regression、离散 CQL penalty | 目标函数组件 + 测试 |
 | LLM RL | Bradley–Terry loss、DPO objective | 实现 + 测试 |
 | LLM RL | token-level PPO update、KL-shaped reward、GRPO clipped objective 与组内优势 | 训练组件 + 测试 |
-| LLM RL | Masked pooling Reward Model head | 模型头组件 + 测试 |
+| LLM RL | Masked pooling Reward Model head 与 Bradley–Terry optimizer step | 模型头 + 训练步骤 + 测试 |
 | LLM RL | Causal LM completion log-prob 与 DPO train step | 训练步骤 + 测试 |
 
 ## 目录
@@ -27,7 +28,7 @@
 - `algorithms/tabular/`：动态规划、Monte Carlo、TD prediction/control。
 - `algorithms/value_based/`：DQN、Double DQN、Rainbow。
 - `algorithms/policy_based/`：REINFORCE、Actor-Critic、A2C、GAE、离散 / 连续动作 PPO。
-- `algorithms/policy_optimization/`：SAC、TD3。
+- `algorithms/policy_optimization/`：DDPG、SAC、TD3。
 - `algorithms/offline_rl/`：IQL、AWR、CQL 核心目标函数。
 - `algorithms/llm_rl/`：偏好优化、奖励模型头、PPO/GRPO 目标函数与训练步骤。
 - `docs/`：数学原理、公式推导、算法差异和实现边界。
@@ -83,4 +84,4 @@ python examples/train_rainbow_cartpole.py --episodes 300
 
 ## 当前限制与 Roadmap
 
-Rainbow Agent 已集成 C51、Double-DQN 动作选择、Dueling、NoisyNet 和 PER 重要性采样更新。n-step accumulator 已接入 Rainbow 的 replay 与 C51 bootstrap discount；PER 使用 O(N) 采样，适合教学而非大规模训练。连续动作 PPO 已提供 rollout 更新组件，但尚无完整 Pendulum 训练脚本。后续还将补齐更多离线 RL 算法、完整 GRPO rollout/trainer 适配、实验日志与 checkpoint、基准测试和消融实验。
+Rainbow Agent 已集成 C51、Double-DQN 动作选择、Dueling、NoisyNet 和 PER 重要性采样更新。n-step accumulator 已接入 Rainbow 的 replay 与 C51 bootstrap discount；PER 使用 O(N) 采样，适合教学而非大规模训练。连续动作 PPO 与 DDPG 均已提供 Pendulum 训练示例。仍需补齐更多离线 RL 算法、完整 GRPO rollout/trainer 适配、实验日志与 checkpoint、基准测试和消融实验。
