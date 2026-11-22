@@ -17,3 +17,13 @@ def test_td3_update_runs():
     metrics = agent.update(replay, batch_size=8)
     assert np.isfinite(metrics["critic_loss"])
     assert np.isfinite(metrics["actor_loss"])
+
+
+def test_td3_rejects_invalid_hyperparameters_and_action_bounds():
+    import pytest
+    with pytest.raises(ValueError):
+        TD3Agent(3, 2, policy_delay=0)
+    with pytest.raises(ValueError):
+        TD3Agent(3, 2, tau=0.0)
+    with pytest.raises(ValueError):
+        TD3Agent(3, 2, action_low=[-1.0, -1.0], action_high=[1.0, -2.0])
