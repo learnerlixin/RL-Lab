@@ -5,11 +5,11 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from algorithms.policy_based.actor_critic import generalized_advantage_estimate
 from algorithms.policy_based.continuous_ppo import (
     ContinuousActorCritic,
     continuous_ppo_update,
 )
+from algorithms.policy_based.rollout_buffer import RolloutBuffer
 
 
 def main(episodes=300, seed=7):
@@ -24,11 +24,10 @@ def main(episodes=300, seed=7):
     )
     optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
     episode_returns = []
+    buffer = RolloutBuffer(capacity=10000)
 
     for episode in range(episodes):
         observation, _ = env.reset(seed=seed if episode == 0 else None)
-        states, actions, logps = [], [], []
-        rewards, values, next_values, terminals = [], [], [], []
         total_reward = 0.0
         while True:
             state = torch.as_tensor(observation, dtype=torch.float32)
@@ -41,30 +40,25 @@ def main(episodes=300, seed=7):
             with torch.no_grad():
                 next_value = model.value(next_state.unsqueeze(0)).squeeze(0)
 
-            states.append(state)
-            actions.append(action.squeeze(0))
-            logps.append(log_prob.squeeze(0))
-            rewards.append(float(reward))
-            values.append(value.squeeze(0))
-            next_values.append(torch.zeros_like(next_value) if terminated else next_value)
-            terminals.append(float(terminated))
+            buffer.add(
+                state.numpy(), action.squeeze(0).cpu().numpy(), float(reward),
+                float(value.squeeze(0).item()), float(log_prob.squeeze(0).item()),
+                float(next_value.item()), terminated=bool(terminated),
+                truncated=bool(truncated),
+            )
             total_reward += float(reward)
             observation = next_observation
             if terminated or truncated:
                 break
 
-        reward_tensor = torch.tensor(rewards, dtype=torch.float32)
-        value_tensor = torch.stack(values)
-        next_value_tensor = torch.stack(next_values)
-        terminal_tensor = torch.tensor(terminals, dtype=torch.float32)
-        advantages, returns = generalized_advantage_estimate(
-            reward_tensor, value_tensor, next_value_tensor, terminal_tensor
-        )
+        buffer.compute_returns_and_advantages(gamma=0.99, gae_lambda=0.95)
+        rollout = buffer.get()
         continuous_ppo_update(
-            model, optimizer, torch.stack(states), torch.stack(actions),
-            torch.stack(logps).detach(), returns.detach(), advantages.detach(),
+            model, optimizer, rollout["observations"], rollout["actions"],
+            rollout["log_probs"], rollout["returns"], rollout["advantages"],
             epochs=10, batch_size=64, entropy_coef=0.001,
         )
+        buffer.clear()
         episode_returns.append(total_reward)
         if (episode + 1) % 10 == 0:
             print(
