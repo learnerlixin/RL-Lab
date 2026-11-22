@@ -244,6 +244,7 @@ class ContinuousCQLAgent:
         critic_grad_norm = torch.nn.utils.clip_grad_norm_(
             list(self.q1.parameters()) + list(self.q2.parameters()), 1.0)
         self.critic_optimizer.step()
+        self.critic_optimizer.zero_grad(set_to_none=True)
 
         for parameter in list(self.q1.parameters()) + list(self.q2.parameters()):
             parameter.requires_grad_(False)
