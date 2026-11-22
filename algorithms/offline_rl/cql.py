@@ -160,9 +160,13 @@ class ContinuousCQLAgent:
         if num_action_samples < 1:
             raise ValueError("num_action_samples must be positive")
         from algorithms.policy_optimization.sac import GaussianActor, QNetwork
+        low = torch.as_tensor(action_low, dtype=torch.float32)
+        high = torch.as_tensor(action_high, dtype=torch.float32)
+        if torch.any(high <= low):
+            raise ValueError("action_high must be greater than action_low")
         self.device = torch.device(device)
         self.actor = GaussianActor(
-            observation_dim, action_dim, action_low, action_high, hidden_dim).to(self.device)
+            observation_dim, action_dim, low, high, hidden_dim).to(self.device)
         self.q1 = QNetwork(observation_dim, action_dim, hidden_dim).to(self.device)
         self.q2 = QNetwork(observation_dim, action_dim, hidden_dim).to(self.device)
         self.target_q1 = QNetwork(observation_dim, action_dim, hidden_dim).to(self.device)
@@ -239,14 +243,20 @@ class ContinuousCQLAgent:
             list(self.q1.parameters()) + list(self.q2.parameters()), 1.0)
         self.critic_optimizer.step()
 
-        sampled_actions, logp, _ = self.actor.sample(states)
-        actor_q = torch.minimum(self.q1(states, sampled_actions),
-                                self.q2(states, sampled_actions))
-        actor_loss = (self.alpha * logp - actor_q).mean()
-        self.actor_optimizer.zero_grad(set_to_none=True)
-        actor_loss.backward()
-        actor_grad_norm = torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 1.0)
-        self.actor_optimizer.step()
+        for parameter in list(self.q1.parameters()) + list(self.q2.parameters()):
+            parameter.requires_grad_(False)
+        try:
+            sampled_actions, logp, _ = self.actor.sample(states)
+            actor_q = torch.minimum(self.q1(states, sampled_actions),
+                                    self.q2(states, sampled_actions))
+            actor_loss = (self.alpha * logp - actor_q).mean()
+            self.actor_optimizer.zero_grad(set_to_none=True)
+            actor_loss.backward()
+            actor_grad_norm = torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 1.0)
+            self.actor_optimizer.step()
+        finally:
+            for parameter in list(self.q1.parameters()) + list(self.q2.parameters()):
+                parameter.requires_grad_(True)
 
         with torch.no_grad():
             for target, online in ((self.target_q1, self.q1), (self.target_q2, self.q2)):
