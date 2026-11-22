@@ -16,6 +16,8 @@ class DDPGAgent:
                  tau=0.005, device="cpu"):
         if not 0.0 <= gamma <= 1.0:
             raise ValueError("gamma must be in [0, 1]")
+        if learning_rate <= 0:
+            raise ValueError("learning_rate must be positive")
         if not 0.0 < tau <= 1.0:
             raise ValueError("tau must be in (0, 1]")
         self.device = torch.device(device)
