@@ -1,5 +1,7 @@
 """Model/optimizer checkpoints with optional RNG-state restoration."""
+import os
 import random
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -24,7 +26,7 @@ def _restore_rng(state):
 
 def save_checkpoint(path, model, optimizer=None, step=0, metadata=None,
                     include_rng=True):
-    """Save model, optional optimizer, progress metadata and RNG states."""
+    """Atomically save model, optimizer, progress metadata and optional RNG state."""
     if step < 0:
         raise ValueError("step must be nonnegative")
     payload = {"model": model.state_dict(), "step": int(step),
@@ -35,13 +37,27 @@ def save_checkpoint(path, model, optimizer=None, step=0, metadata=None,
         payload["rng_state"] = _rng_state()
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(payload, destination)
+    temp_path = None
+    try:
+        descriptor, temp_name = tempfile.mkstemp(
+            prefix=f".{destination.name}.", suffix=".tmp", dir=destination.parent)
+        os.close(descriptor)
+        temp_path = Path(temp_name)
+        torch.save(payload, temp_path)
+        os.replace(temp_path, destination)
+    except Exception:
+        if temp_path is not None:
+            temp_path.unlink(missing_ok=True)
+        raise
     return destination
 
 
 def load_checkpoint(path, model, optimizer=None, map_location="cpu",
                     restore_rng=False, strict=True):
-    """Restore a checkpoint and return its step and user metadata."""
+    """Restore a checkpoint and return its step and user metadata.
+
+    Only load checkpoint files from trusted sources.
+    """
     payload = torch.load(path, map_location=map_location, weights_only=False)
     if "model" not in payload or "step" not in payload:
         raise ValueError("invalid checkpoint: missing model or step")
@@ -55,3 +71,6 @@ def load_checkpoint(path, model, optimizer=None, map_location="cpu",
             raise ValueError("checkpoint does not contain RNG state")
         _restore_rng(payload["rng_state"])
     return {"step": int(payload["step"]), "metadata": dict(payload.get("metadata", {}))}
+
+
+__all__ = ["save_checkpoint", "load_checkpoint"]
