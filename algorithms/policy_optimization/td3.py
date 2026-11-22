@@ -82,14 +82,22 @@ class TD3Agent:
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
         self.critic_optimizer.step()
+        self.critic_optimizer.zero_grad(set_to_none=True)
         self.updates += 1
         actor_loss_value = 0.0
         if self.updates % self.policy_delay == 0:
-            actor_loss = -self.q1(states, self.actor(states)).mean()
-            self.actor_optimizer.zero_grad()
-            actor_loss.backward()
-            self.actor_optimizer.step()
-            actor_loss_value = float(actor_loss.detach())
+            critic_parameters = list(self.q1.parameters()) + list(self.q2.parameters())
+            for parameter in critic_parameters:
+                parameter.requires_grad_(False)
+            try:
+                actor_loss = -self.q1(states, self.actor(states)).mean()
+                self.actor_optimizer.zero_grad(set_to_none=True)
+                actor_loss.backward()
+                self.actor_optimizer.step()
+                actor_loss_value = float(actor_loss.detach())
+            finally:
+                for parameter in critic_parameters:
+                    parameter.requires_grad_(True)
             self._soft_update(self.target_actor, self.actor)
             self._soft_update(self.target_q1, self.q1)
             self._soft_update(self.target_q2, self.q2)
