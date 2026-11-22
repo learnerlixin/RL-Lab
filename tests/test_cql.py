@@ -90,3 +90,23 @@ def test_discrete_cql_critic_step_updates_parameters():
     metrics = discrete_cql_critic_step(q_network, optimizer, states, actions, targets)
     assert torch.isfinite(torch.tensor(metrics["loss"]))
     assert not torch.equal(before, q_network.net.weight)
+
+
+def test_continuous_cql_agent_performs_offline_update_and_bounds_action():
+    from algorithms.offline_rl.cql import ContinuousCQLAgent
+    agent = ContinuousCQLAgent(
+        3, 2, action_low=[-2.0, -1.0], action_high=[2.0, 1.0],
+        hidden_dim=32, num_action_samples=4)
+    batch = {
+        "observations": torch.randn(8, 3),
+        "actions": torch.empty(8, 2).uniform_(-0.8, 0.8),
+        "rewards": torch.randn(8),
+        "next_observations": torch.randn(8, 3),
+        "terminals": torch.randint(0, 2, (8,)).float(),
+    }
+    metrics = agent.update(batch)
+    assert all(torch.isfinite(torch.tensor(value)) for value in metrics.values())
+    action = agent.act([0.0, 0.1, -0.1])
+    assert action.shape == (2,)
+    assert -2.0 <= action[0] <= 2.0
+    assert -1.0 <= action[1] <= 1.0
