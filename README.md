@@ -12,7 +12,7 @@
 | 表格型 | epsilon-greedy、SARSA、Q-learning | 实现 + 测试 |
 | 深度价值 | DQN、Replay Buffer、Target Network | 实现 + 测试 |
 | 深度价值 | Double DQN、Dueling 网络、Prioritized Replay | 实现 + 测试 |
-| 深度价值 | Rainbow：C51、Double-DQN target、Dueling、NoisyNet、PER 加权更新 | 集成 Agent + 测试 + CartPole 示例 |
+| 深度价值 | Rainbow：C51、Double-DQN target、Dueling、NoisyNet、PER 加权更新、n-step accumulator | 集成 Agent + 测试 + CartPole 示例 |
 | 策略梯度 | REINFORCE、Actor-Critic、GAE | 实现 + 测试 |
 | 策略优化 | 离散动作 PPO minibatch update | 实现 + 测试 |
 | 连续控制 | SAC、TD3（双 Q、target 网络、连续动作策略） | 实现 + 测试 |
@@ -29,7 +29,7 @@
 - `algorithms/policy_based/`：REINFORCE、Actor-Critic、GAE、PPO。
 - `algorithms/policy_optimization/`：SAC、TD3。
 - `algorithms/offline_rl/`：IQL、CQL 核心目标函数。
-- `algorithms/llm_rl/`：偏好优化、奖励模型头、PPO/GRPO 目标函数。
+- `algorithms/llm_rl/`：偏好优化、奖励模型头、PPO/GRPO 目标函数与训练步骤。
 - `docs/`：数学原理、公式推导、算法差异和实现边界。
 - `examples/`：小型可运行示例。
 - `tests/`：单元测试。
