@@ -14,7 +14,11 @@
 | LLM RL | Bradley–Terry Reward Model、DPO、token-level PPO + GAE/Value head、GRPO rollout preparation | Objective、训练步骤、批次构造、测试 |
 | 实验基础设施 | 随机种子、CSV 日志、Checkpoint、策略评估 | 工具、测试、文档 |
 
-## 多随机种子实验\n\n`run_seed_sweep` 和 `summarize_seed_results` 提供统一多 seed 执行与 mean/std/置信区间汇总，说明见 [`docs/33_multi_seed_benchmark.md`](docs/33_multi_seed_benchmark.md)。\n\n## PPO rollout 缓冲区
+## 多随机种子实验
+
+`run_seed_sweep` 和 `summarize_seed_results` 提供统一多 seed 执行与 mean/std/置信区间汇总，说明见 [`docs/33_multi_seed_benchmark.md`](docs/33_multi_seed_benchmark.md)。
+
+## PPO rollout 缓冲区
 
 `RolloutBuffer` 提供 transition 存储、GAE/return 计算与 minibatch 采样，并区分 terminated 和 truncated。用法见 [`docs/31_on_policy_rollout_buffer.md`](docs/31_on_policy_rollout_buffer.md)。
 
@@ -30,7 +34,7 @@
 - `algorithms/policy_optimization/`：DDPG、SAC、TD3。
 - `algorithms/offline_rl/`：BC、IQL、AWR、CQL 与离线 transition dataset。
 - `algorithms/llm_rl/`：Reward Model、DPO、LLM-PPO、GRPO trainer 与 rollout packing。
-- `utils/`：reproducibility、CSV logger、checkpoint、evaluation。
+- `utils/`：reproducibility、CSV logger、checkpoint、evaluation、多 seed benchmark 汇总。
 - `examples/`：可运行训练脚本。
 - `docs/`：算法推导、公式、实现边界与使用说明。
 - `tests/`：单元测试。
@@ -86,6 +90,14 @@ BC 示例收集一个简单控制器生成的 CartPole 演示数据；IQL 示例
 - CQL：离散 Q penalty/critic step；连续 CQL Agent 集成 SAC-style actor/twin critics、随机/策略候选动作采样、密度校正和 conservative update。独立连续 critic helper 仍允许调用方提供候选动作与 TD target。
 
 完整 API 与简化假设见 `docs/27_offline_rl_training.md`。
+
+## LLM RL 示例
+
+```bash
+python examples/tiny_llm_rl_pipeline.py --steps 20
+```
+
+该脚本用小型合成模型串联 Reward Model 训练、DPO 和 GRPO，用于验证接口流程；不需要 Transformers，也不代表真实语言模型对齐效果。
 
 ## LLM RL 的边界
 
