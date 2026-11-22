@@ -1,87 +1,113 @@
-# RL-Lab：强化学习与大模型对齐实践
+# RL-Lab：强化学习与大模型强化学习实践
 
-> 从马尔可夫决策过程到 LLM post-training：用可运行的代码理解强化学习。
+一个以 Python / PyTorch 为主的强化学习学习仓库，覆盖表格型 RL、深度价值学习、策略优化、Offline RL 与 LLM preference optimization。项目目标是让公式、实现、单元测试和小型实验相互对应。
 
-本仓库面向希望系统学习强化学习（Reinforcement Learning, RL）及大语言模型强化学习/对齐方法的读者。目标不是封装算法调用，而是尽量从数学定义出发，使用 Python、NumPy 与 PyTorch 实现核心算法，并通过小型实验验证关键结论。
+## 算法覆盖
 
-**当前阶段：** 项目骨架与第一批基础教程。算法实现会按路线逐步补齐；未实现的模块会明确标注，不把目录占位误当成已完成实现。
+| 方向 | 已实现内容 | 交付形式 |
+|---|---|---|
+| 表格型 RL | MDP/Bellman、Policy Evaluation/Iteration、Value Iteration、Monte Carlo、TD(0)、SARSA、Q-learning | 实现、测试、示例 |
+| 深度价值 | DQN、Double DQN、Dueling、PER、Rainbow（C51、NoisyNet、n-step） | Agent、测试、CartPole 示例 |
+| Policy Gradient | REINFORCE、Actor-Critic、GAE、A2C、离散 PPO、连续 tanh-Gaussian PPO | 算法组件、测试、CartPole/Pendulum 训练示例 |
+| 连续控制 | DDPG、SAC、TD3 | Agent、测试、Pendulum 示例 |
+| Offline RL | Behavior Cloning、IQL Agent、AWR Agent、离散 CQL critic step、连续 CQL Agent | Agent、训练步骤、数据集工具、Pendulum/CartPole 示例、测试 |
+| LLM RL | Bradley–Terry Reward Model、DPO、token-level PPO + GAE/Value head、GRPO Trainer、HF-style generate adapter | Objective、训练步骤、批次构造、tiny LLM pipeline 示例、测试 |
+| 实验基础设施 | 随机种子、CSV 日志、原子 Checkpoint、策略评估、多 seed 汇总 | 工具、测试、训练示例、文档 |
 
-## 学习路线
+## 多随机种子实验
 
-1. **基础数学与问题建模**：MDP、回报、价值函数、Bellman 方程、动态规划。
-2. **无模型学习**：Monte Carlo、TD(0)、SARSA、Q-learning、Expected SARSA。
-3. **深度价值学习**：DQN、Double DQN、Dueling DQN、Prioritized Replay、Rainbow。
-4. **策略梯度与 Actor-Critic**：REINFORCE、A2C/A3C、GAE。
-5. **策略优化与连续控制**：TRPO、PPO、DDPG、TD3、SAC。
-6. **离线与模型式 RL**：Behavior Cloning、IQL、CQL、Dyna、Model-Based RL。
-7. **LLM 强化学习与偏好优化**：SFT、Reward Model、RLHF、PPO、DPO、IPO、KTO、GRPO、RLAIF、在线/离线偏好优化。
+`run_seed_sweep` 和 `summarize_seed_results` 提供统一多 seed 执行与 mean/std/置信区间汇总，说明见 [`docs/33_multi_seed_benchmark.md`](docs/33_multi_seed_benchmark.md)。
 
-## 目录
+## PPO rollout 缓冲区
 
-```text
-docs/                 原理讲解、公式推导与阅读路线
-algorithms/
-  tabular/            动态规划、MC、TD、SARSA、Q-learning
-  value_based/        DQN 系列
-  policy_based/       REINFORCE、Actor-Critic
-  policy_optimization/ PPO、TRPO、SAC 等
-  offline/            离线强化学习
-  model_based/        模型式强化学习
-  llm_rl/             RLHF、PPO、DPO、GRPO 等
-examples/             可直接运行的小实验
-configs/              实验配置
-tests/                单元测试
-```
+`RolloutBuffer` 提供 transition 存储、GAE/return 计算与 minibatch 采样，并区分 terminated 和 truncated。用法见 [`docs/31_on_policy_rollout_buffer.md`](docs/31_on_policy_rollout_buffer.md)。
 
-## 环境安装
+## 公共 API
 
-建议 Python 3.10–3.12。
+常用算法可通过 `algorithms.tabular`、`algorithms.value_based`、`algorithms.policy_based`、`algorithms.policy_optimization`、`algorithms.offline_rl` 和 `algorithms.llm_rl` 导入。示例见 [`docs/30_public_api.md`](docs/30_public_api.md)。
+
+## 项目结构
+
+- `algorithms/tabular/`：动态规划、Monte Carlo、TD prediction/control。
+- `algorithms/value_based/`：DQN、Rainbow 及其组件。
+- `algorithms/policy_based/`：REINFORCE、Actor-Critic、A2C、PPO。
+- `algorithms/policy_optimization/`：DDPG、SAC、TD3。
+- `algorithms/offline_rl/`：BC、IQL、AWR、CQL 与离线 transition dataset。
+- `algorithms/llm_rl/`：Reward Model、DPO、LLM-PPO、GRPO trainer 与 rollout packing。
+- `utils/`：reproducibility、CSV logger、checkpoint、evaluation、多 seed benchmark 汇总。
+- `examples/`：可运行训练脚本。
+- `docs/`：算法推导、公式、实现边界与使用说明。
+- `tests/`：单元测试。
+- `.github/workflows/`：Python 3.10/3.11/3.12 CI。
+
+## 安装与测试
+
+建议 Python 3.10+。
 
 ```bash
 python -m venv .venv
-# Linux / macOS
+# macOS/Linux
 source .venv/bin/activate
 # Windows PowerShell
-.venv\\Scripts\\Activate.ps1
+# .venv\\Scripts\\Activate.ps1
 
+python -m pip install --upgrade pip
 pip install -r requirements.txt
+pytest -q
 ```
 
-核心概念示例尽量只依赖 NumPy；神经网络算法使用 PyTorch。Gymnasium 用于标准环境交互。LLM 部分会把算法数学原理与大规模训练工程区分开，默认提供小型、可在普通设备上理解/验证的示例，不要求下载大型模型。
+## 示例
 
-## 每个算法的讲解规范
+```bash
+# Tabular + online RL
+python examples/tabular_control.py
+python examples/train_dqn_cartpole.py
+python examples/train_ppo_cartpole.py
+python examples/train_a2c_cartpole.py --episodes 500
+python examples/sweep_a2c_cartpole.py --seeds 0 1 2 3 4 --episodes 300
+python examples/train_rainbow_cartpole.py --episodes 300
 
-- **问题定义**：状态、动作、奖励、终止条件和假设。
-- **数学原理**：目标函数、关键公式及符号说明。
-- **推导直觉**：公式从哪里来、为什么这样更新。
-- **代码实现**：张量形状、关键函数、逐步注释。
-- **实验**：运行命令、预期现象、超参数影响。
-- **局限性**：稳定性、样本效率、计算成本和适用边界。
+# Continuous control
+python examples/train_continuous_ppo_pendulum.py --episodes 300
+python examples/train_ddpg_pendulum.py --episodes 200
+python examples/train_sac_pendulum.py
 
-## LLM 强化学习专题说明
+# Offline RL
+python examples/train_bc_cartpole.py --episodes 80 --epochs 30
+python examples/train_iql_pendulum.py --episodes 40 --epochs 10
+python examples/train_cql_pendulum.py --episodes 40 --epochs 10
+python examples/train_awr_pendulum.py --episodes 40 --epochs 10
+```
 
-LLM 的 post-training 不等于简单地“把 PPO 用在文本上”。本仓库会明确区分：
+BC 示例收集一个简单控制器生成的 CartPole 演示数据；IQL 示例展示 NPZ 离线 transition dataset 和训练循环，默认数据由随机 Pendulum 策略采集。后者是管线示例，不是性能 benchmark，也不保证随机数据能学出高回报策略。
 
-- **SFT**：监督微调，通常是偏好优化/强化学习之前的策略初始化阶段，不本身等同于 RL。
-- **Reward Modeling**：从比较偏好中学习奖励函数，例如 Bradley–Terry 形式。
-- **RLHF**：以人类偏好训练奖励模型，再使用 PPO 等方法优化策略；具体系统可能采用不同变体。
-- **PPO**：通过概率比率裁剪等机制限制每轮策略更新幅度。
-- **DPO / IPO / KTO**：直接或以不同统计目标利用偏好数据优化模型；它们与显式在线 RL 的训练流程不同。
-- **GRPO**：对同一 prompt 的多条生成进行组内相对比较，构造优势信号；其具体实现存在不同变体。
-- **RLAIF**：使用 AI 反馈辅助构造偏好或奖励信号。
-- **评估与安全**：奖励 hacking、分布偏移、KL 约束、长度偏差和可验证奖励等问题。
+## Offline RL API
 
-## 重要约定
+`OfflineTransitionDataset` 将 observations、actions、rewards、next_observations、terminals 和 timeouts 统一存储，支持 NPZ 加载/保存及 D4RL-style mapping 导入。真实 MDP 终止与时间限制截断分开记录，避免把 time-limit truncation 错误当作 terminal 阻断 bootstrap。
 
-- 教程优先采用可复现、可测试的最小实现；与论文/工业系统不同的地方会明确说明。
-- 公式中的符号在首次出现时定义，代码变量尽量与公式对应。
-- 随机实验会固定 seed，并说明环境/依赖版本可能造成的差异。
-- 不把单次训练曲线当成算法优越性的证据；比较时应使用多 seed 与统计汇总。
+- BC：离散动作交叉熵、连续动作 MSE、统一 optimizer step。
+- IQL：连续动作高斯策略、双 Q、expectile value、target Q、advantage-weighted policy update。
+- AWR：带 advantage 权重的 actor 更新和 value regression step。
+- CQL：离散 Q penalty/critic step；连续 CQL Agent 集成 SAC-style actor/twin critics、随机/策略候选动作采样、密度校正和 conservative update。独立连续 critic helper 仍允许调用方提供候选动作与 TD target。
 
-## 贡献与引用
+完整 API 与简化假设见 `docs/27_offline_rl_training.md`。
 
-欢迎提出问题、修正推导、补充实验。论文方法请优先引用原论文或作者公开资料；第三方实现仅作为工程参考。
+## LLM RL 示例
 
-## License
+```bash
+python examples/tiny_llm_rl_pipeline.py --steps 20
+```
 
-待项目首批内容稳定后补充许可证。
+该脚本用小型合成模型串联 Reward Model 训练、DPO 和 GRPO，用于验证接口流程；不需要 Transformers，也不代表真实语言模型对齐效果。
+
+## LLM RL 的边界
+
+DPO、LLM-PPO、GRPO 和 Reward Model trainer 提供可复用的目标函数或 optimizer step，不是开箱即用的 LLM 对齐框架。模型生成、tokenizer、rollout storage、奖励打分、参考模型管理、分布式调度、实验跟踪和模型评估仍需按具体模型/任务接入。GRPO 支持 callback 驱动的 group rollout 收集、prompt/completion padding、old/reference log-prob 计算、批次构造与一步式 GRPOTrainer；模型生成策略、tokenizer 与 reward scoring 仍由调用方提供。LLM-PPO 提供 token-level GAE、value head 更新和 LLMPPOTrainer，可把 callback generation/reward、KL shaping、GAE、critic/actor 多 epoch minibatch 更新串成单批训练流程。
+
+## 实验复现
+
+`seed_everything`、`CSVLogger`、`save_checkpoint/load_checkpoint` 与 `evaluate_policy` 提供实验基础能力。更严格的复现还需要记录依赖锁定、环境版本、硬件/CUDA、训练配置、数据集版本和代码 commit。
+
+## 实现原则与后续工作
+
+本仓库以教学实现和模块化训练组件为主，不把简化实现称为论文级或工业级复现。新增 A2C 端到端脚本示例会统一使用 rollout buffer、CSV 日志、独立评估环境与 checkpoint。后续仍值得持续加强：标准离线 benchmark 数据接入、完整在线/离线算法对照实验、分布式 rollout、真实模型生成与 reward service 的生产级编排、分布式训练、超参数 sweep 与消融测试。
