@@ -1,40 +1,32 @@
 # RL-Lab：强化学习与大模型强化学习实践
 
-一个以 Python / PyTorch 为主的强化学习学习仓库：从 MDP 和表格型算法，逐步进入深度强化学习与 LLM preference optimization。优先保证公式、实现、测试三者能互相对应。
+一个以 Python / PyTorch 为主的强化学习学习仓库，覆盖表格型 RL、深度价值学习、策略优化、Offline RL 与 LLM preference optimization。项目目标是让公式、实现、单元测试和小型实验相互对应。
 
-## 当前已实现
+## 算法覆盖
 
-| 模块 | 算法 / 组件 | 状态 |
+| 方向 | 已实现内容 | 交付形式 |
 |---|---|---|
-| 基础 | MDP、Bellman 方程 | 文档 |
-| 表格型 | Policy Evaluation、Policy Iteration、Value Iteration | 实现 + 测试 |
-| 表格型 | First-visit Monte Carlo、TD(0) prediction | 实现 + 测试 |
-| 表格型 | epsilon-greedy、SARSA、Q-learning | 实现 + 测试 |
-| 深度价值 | DQN、Replay Buffer、Target Network | 实现 + 测试 |
-| 深度价值 | Double DQN、Dueling 网络、Prioritized Replay | 实现 + 测试 |
-| 深度价值 | Rainbow：C51、Double-DQN target、Dueling、NoisyNet、PER 加权更新、n-step accumulator | 集成 Agent + 测试 + CartPole 示例 |
-| 策略梯度 | REINFORCE、Actor-Critic、GAE、同步 A2C | 实现 + 测试 |
-| 策略优化 | 离散动作 PPO minibatch update | 实现 + 测试 |\n| 策略优化 | 连续动作 PPO（tanh Gaussian Actor-Critic、动作边界与 log-prob 修正） | 实现 + 测试 |
-| 连续控制 | DDPG（确定性 Actor-Critic、target networks、Polyak 更新） | Agent + 测试 + Pendulum 示例 |
-| 连续控制 | SAC、TD3（双 Q、target 网络、连续动作策略） | 实现 + 测试 |
-| 离线 RL | IQL expectile、Q target、advantage-weighted BC、AWR weighted regression、离散 CQL penalty | 目标函数组件 + 测试 |
-| LLM RL | Bradley–Terry loss、DPO objective | 实现 + 测试 |
-| LLM RL | token-level PPO update、KL-shaped reward、GRPO clipped objective 与组内优势 | 训练组件 + 测试 |
-| LLM RL | Masked pooling Reward Model head 与 Bradley–Terry optimizer step | 模型头 + 训练步骤 + 测试 |\n| 实验工具 | 随机种子、CSV 指标日志、模型/优化器 checkpoint、Gymnasium 策略评估 | 工具 + 测试 |
-| LLM RL | Causal LM completion log-prob 与 DPO train step | 训练步骤 + 测试 |
+| 表格型 RL | MDP/Bellman、Policy Evaluation/Iteration、Value Iteration、Monte Carlo、TD(0)、SARSA、Q-learning | 实现、测试、示例 |
+| 深度价值 | DQN、Double DQN、Dueling、PER、Rainbow（C51、NoisyNet、n-step） | Agent、测试、CartPole 示例 |
+| Policy Gradient | REINFORCE、Actor-Critic、GAE、A2C、离散 PPO、连续 tanh-Gaussian PPO | 算法组件、测试、训练示例 |
+| 连续控制 | DDPG、SAC、TD3 | Agent、测试、Pendulum 示例 |
+| Offline RL | Behavior Cloning、IQL、AWR、离散 CQL、连续 CQL critic 更新 | Loss、训练步骤、数据集工具、测试 |
+| LLM RL | Bradley–Terry Reward Model、DPO、token-level PPO、GRPO | Objective、训练步骤、测试 |
+| 实验基础设施 | 随机种子、CSV 日志、Checkpoint、策略评估 | 工具、测试、文档 |
 
-## 目录
+## 项目结构
 
 - `algorithms/tabular/`：动态规划、Monte Carlo、TD prediction/control。
-- `algorithms/value_based/`：DQN、Double DQN、Rainbow。
-- `algorithms/policy_based/`：REINFORCE、Actor-Critic、A2C、GAE、离散 / 连续动作 PPO。
+- `algorithms/value_based/`：DQN、Rainbow 及其组件。
+- `algorithms/policy_based/`：REINFORCE、Actor-Critic、A2C、PPO。
 - `algorithms/policy_optimization/`：DDPG、SAC、TD3。
-- `algorithms/offline_rl/`：IQL、AWR、CQL 核心目标函数。
-- `algorithms/llm_rl/`：偏好优化、奖励模型头、PPO/GRPO 目标函数与训练步骤。
-- `docs/`：数学原理、公式推导、算法差异和实现边界。
-- `examples/`：小型可运行示例。
-- `tests/`：单元测试。\n- `utils/`：随机种子、CSV 日志、checkpoint 与策略评估。
-- `.github/workflows/`：GitHub Actions 自动测试。
+- `algorithms/offline_rl/`：BC、IQL、AWR、CQL 与离线 transition dataset。
+- `algorithms/llm_rl/`：Reward Model、DPO、LLM-PPO、GRPO 训练组件。
+- `utils/`：reproducibility、CSV logger、checkpoint、evaluation。
+- `examples/`：可运行训练脚本。
+- `docs/`：算法推导、公式、实现边界与使用说明。
+- `tests/`：单元测试。
+- `.github/workflows/`：Python 3.10/3.11/3.12 CI。
 
 ## 安装与测试
 
@@ -55,35 +47,43 @@ pytest -q
 ## 示例
 
 ```bash
+# Tabular + online RL
 python examples/tabular_control.py
 python examples/train_dqn_cartpole.py
 python examples/train_ppo_cartpole.py
+python examples/train_rainbow_cartpole.py --episodes 300
+
+# Continuous control
 python examples/train_continuous_ppo_pendulum.py --episodes 300
 python examples/train_ddpg_pendulum.py --episodes 200
 python examples/train_sac_pendulum.py
-python examples/train_rainbow_cartpole.py --episodes 300
+
+# Offline RL
+python examples/train_bc_cartpole.py --episodes 80 --epochs 30
+python examples/train_iql_pendulum.py --episodes 40 --epochs 10
 ```
 
-## 实验工具\n\n实验基础设施的 API、用法和边界见 [`docs/26_experiment_infrastructure.md`](docs/26_experiment_infrastructure.md)。\n\n## 学习顺序
+BC 示例收集一个简单控制器生成的 CartPole 演示数据；IQL 示例展示 NPZ 离线 transition dataset 和训练循环，默认数据由随机 Pendulum 策略采集。后者是管线示例，不是性能 benchmark，也不保证随机数据能学出高回报策略。
 
-1. 阅读 `docs/01_mdp_and_bellman.md` 和 `docs/02_td_control.md`。
-2. 运行 `examples/tabular_control.py`，理解 SARSA 与 Q-learning。
-3. 学习 DP、MC、TD，再阅读 DQN、Double DQN 和 Rainbow。
-4. 从 REINFORCE 过渡到 Actor-Critic、A2C、GAE 和 PPO。
-5. 阅读 LLM 偏好优化文档，理解 Reward Model、DPO、PPO、GRPO 的联系与区别。
+## Offline RL API
 
-## LLM 强化学习的重要边界
+`OfflineTransitionDataset` 将 observations、actions、rewards、next_observations、terminals 和 timeouts 统一存储，并支持 NPZ 加载/保存。真实 MDP 终止与时间限制截断分开记录，避免把 time-limit truncation 错误当作 terminal 阻断 bootstrap。
 
-- SFT 是监督微调，不等同于强化学习。
-- RLHF 是一类训练流程；Reward Model 是奖励建模组件，PPO 是可能采用的策略优化方法。
-- DPO 直接从偏好对构造目标，不要求显式在线 PPO 训练循环。
-- GRPO 通常使用同一 prompt 下多个 completion 的组内相对优势。
-- 这里的 PPO/GRPO 是可复用的目标函数或优化组件，并非开箱即用的大模型训练框架。完整训练还需要 tokenizer、模型生成、rollout storage、奖励管线、分布式训练、checkpoint、评测与安全审查。
+- BC：离散动作交叉熵、连续动作 MSE、统一 optimizer step。
+- IQL：连续动作高斯策略、双 Q、expectile value、target Q、advantage-weighted policy update。
+- AWR：带 advantage 权重的 actor 更新和 value regression step。
+- CQL：离散 Q penalty/critic step；连续动作采样候选 CQL penalty/critic step。连续 action sampling 和 TD target 由调用方提供。
 
-## 实现原则
+完整 API 与简化假设见 `docs/27_offline_rl_training.md`。
 
-每个算法尽量遵循：问题定义 → 数学目标 → 公式推导 → 核心实现 → 单元测试 → 实验与局限。任何简化都会在文档中说明，不把教学实现包装成论文级或工业级复现。
+## LLM RL 的边界
 
-## 当前限制与 Roadmap
+DPO、LLM-PPO、GRPO 和 Reward Model trainer 提供可复用的目标函数或 optimizer step，不是开箱即用的 LLM 对齐框架。模型生成、tokenizer、rollout storage、奖励打分、参考模型管理、分布式调度、实验跟踪和模型评估仍需按具体模型/任务接入。GRPO 的生成与 reward scoring 由调用方负责；训练步骤处理 causal shift、completion mask、clipped objective 和可选 reference KL。
 
-Rainbow Agent 已集成 C51、Double-DQN 动作选择、Dueling、NoisyNet 和 PER 重要性采样更新。n-step accumulator 已接入 Rainbow 的 replay 与 C51 bootstrap discount；PER 使用 O(N) 采样，适合教学而非大规模训练。连续动作 PPO 与 DDPG 均已提供 Pendulum 训练示例。已提供通用随机种子、CSV 日志、模型/优化器 checkpoint 与策略评估工具。仍需补齐更多离线 RL 算法、完整 GRPO rollout/trainer 适配、基准测试和消融实验。
+## 实验复现
+
+`seed_everything`、`CSVLogger`、`save_checkpoint/load_checkpoint` 与 `evaluate_policy` 提供实验基础能力。更严格的复现还需要记录依赖锁定、环境版本、硬件/CUDA、训练配置、数据集版本和代码 commit。
+
+## 实现原则与后续工作
+
+本仓库以教学实现和模块化训练组件为主，不把简化实现称为论文级或工业级复现。后续仍值得持续加强：标准离线 benchmark 数据接入、完整在线/离线算法对照实验、GRPO rollout pipeline、LLM-PPO critic/GAE 集成、分布式训练、超参数 sweep 与消融测试。
