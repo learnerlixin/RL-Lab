@@ -29,7 +29,7 @@ class FakeGenerateModel(nn.Module):
             [8, 9, 0],
         ], device=input_ids.device)
         expanded_inputs = input_ids.repeat(num_return_sequences, 1)
-        return torch.cat([expanded_inputs, continuations], dim=1)
+        return torch.cat([expanded_inputs, continuations[:num_return_sequences]], dim=1)
 
 
 def test_generation_adapter_batches_prompt_and_stops_at_eos():
@@ -59,3 +59,13 @@ def test_generation_adapter_rejects_invalid_generation_settings():
         generate_causal_lm_completions(
             nn.Linear(2, 2), [1], group_size=2,
             pad_token_id=0, max_new_tokens=2)
+
+
+def test_generation_adapter_supports_single_sequence_for_llm_ppo():
+    model = FakeGenerateModel()
+    completions = generate_causal_lm_completions(
+        model, [1, 2], group_size=1, pad_token_id=0,
+        max_new_tokens=3, eos_token_id=9)
+    assert completions == [[4, 9]]
+    assert model.seen["input_shape"] == (1, 2)
+    assert model.seen["num_return_sequences"] == 1
