@@ -55,7 +55,8 @@ dataset.save_npz("copy.npz")
 
 目标 Q、target network、policy action sampling、随机动作采样和 entropy/log-density 的准确计算都留给调用方，以便适配 SAC 等不同 actor-critic 结构。离散动作同样提供 `discrete_cql_critic_step`，将数据动作 TD 误差和全动作保守项组合。CQL 接口是 critic 更新组件，不是完整的离线 CQL Agent。
 
-## 4. IQL Agent 与 AWR 更新\n\n`IQLAgent` 提供连续动作 IQL 更新：双 Q target、expectile value 回归、TD critic 回归、tanh-Gaussian policy，以及按优势加权的最大似然策略更新。调用方传入 transition minibatch，字段与 `OfflineTransitionDataset` 相同。\n\n`awr_train_step` 提供 actor/value 两个 optimizer 的更新接口。policy 需暴露 `log_prob(states, actions)`；returns/GAE 由调用方提供。它与 IQL 的策略提取形式相似，但 AWR 的 value target 由调用方准备。\n\nIQL 示例：\n\n```bash\npython examples/train_iql_pendulum.py --episodes 40 --epochs 10\n```\n\n## 5. CartPole 端到端示例
+## 4. IQL Agent 与 AWR 更新\n\n`IQLAgent` 提供连续动作 IQL 更新：双 Q target、expectile value 回归、TD critic 回归、tanh-Gaussian policy，以及按优势加权的最大似然策略更新。调用方传入 transition minibatch，字段与 `OfflineTransitionDataset` 相同。\n\n`awr_train_step` 提供 actor/value 两个 optimizer 的更新接口。policy 需暴露 `log_prob(states, actions)`；returns/GAE 由调用方提供。它与 IQL 的策略提取形式相似，但 AWR 的 value target 由调用方准备。\n\nIQL 示例：\n\n```bash\npython examples/train_iql_pendulum.py --episodes 40 --epochs 10
+python examples/train_cql_pendulum.py --episodes 40 --epochs 10\n```\n\n## 5. CartPole 端到端示例
 
 ```bash
 python examples/train_bc_cartpole.py --episodes 80 --epochs 30
