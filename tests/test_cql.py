@@ -106,6 +106,8 @@ def test_continuous_cql_agent_performs_offline_update_and_bounds_action():
     }
     metrics = agent.update(batch)
     assert all(torch.isfinite(torch.tensor(value)) for value in metrics.values())
+    assert all(parameter.grad is None for parameter in agent.q1.parameters())
+    assert all(parameter.grad is None for parameter in agent.q2.parameters())
     action = agent.act([0.0, 0.1, -0.1])
     assert action.shape == (2,)
     assert -2.0 <= action[0] <= 2.0
