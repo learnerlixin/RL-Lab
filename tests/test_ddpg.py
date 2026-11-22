@@ -38,3 +38,8 @@ def test_ddpg_rejects_invalid_discount_parameters():
         DDPGAgent(3, 1, gamma=1.5)
     with pytest.raises(ValueError):
         DDPGAgent(3, 1, tau=0.0)
+
+
+def test_ddpg_rejects_nonpositive_learning_rate():
+    with pytest.raises(ValueError):
+        DDPGAgent(3, 1, learning_rate=0.0)
