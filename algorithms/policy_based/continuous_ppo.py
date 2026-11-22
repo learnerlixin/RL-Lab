@@ -67,7 +67,11 @@ def continuous_ppo_update(model, optimizer, states, actions, old_log_probs,
     """Optimize a collected continuous-action rollout with PPO clipping."""
     if clip_range <= 0 or epochs <= 0 or batch_size <= 0 or max_grad_norm <= 0:
         raise ValueError("clip_range, epochs, batch_size and max_grad_norm must be positive")
+    if value_coef < 0 or entropy_coef < 0:
+        raise ValueError("value_coef and entropy_coef must be nonnegative")
     size = states.shape[0]
+    if size == 0:
+        raise ValueError("rollout must contain at least one transition")
     if not (actions.shape[0] == old_log_probs.shape[0] == returns.shape[0]
             == advantages.shape[0] == size):
         raise ValueError("all rollout tensors must share the leading dimension")
