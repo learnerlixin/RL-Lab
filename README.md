@@ -8,7 +8,7 @@
 |---|---|---|
 | 表格型 RL | MDP/Bellman、Policy Evaluation/Iteration、Value Iteration、Monte Carlo、TD(0)、SARSA、Q-learning | 实现、测试、示例 |
 | 深度价值 | DQN、Double DQN、Dueling、PER、Rainbow（C51、NoisyNet、n-step） | Agent、测试、CartPole 示例 |
-| Policy Gradient | REINFORCE、Actor-Critic、GAE、A2C、离散 PPO、连续 tanh-Gaussian PPO | 算法组件、测试、训练示例 |
+| Policy Gradient | REINFORCE、Actor-Critic、GAE、A2C、离散 PPO、连续 tanh-Gaussian PPO | 算法组件、测试、CartPole/Pendulum 训练示例 |
 | 连续控制 | DDPG、SAC、TD3 | Agent、测试、Pendulum 示例 |
 | Offline RL | Behavior Cloning、IQL Agent、AWR Agent、离散 CQL critic step、连续 CQL Agent | Agent、训练步骤、数据集工具、Pendulum/CartPole 示例、测试 |
 | LLM RL | Bradley–Terry Reward Model、DPO、token-level PPO + GAE/Value head、GRPO rollout preparation | Objective、训练步骤、批次构造、测试 |
@@ -59,6 +59,7 @@ pytest -q
 python examples/tabular_control.py
 python examples/train_dqn_cartpole.py
 python examples/train_ppo_cartpole.py
+python examples/train_a2c_cartpole.py --episodes 500
 python examples/train_rainbow_cartpole.py --episodes 300
 
 # Continuous control
@@ -96,4 +97,4 @@ DPO、LLM-PPO、GRPO 和 Reward Model trainer 提供可复用的目标函数或 
 
 ## 实现原则与后续工作
 
-本仓库以教学实现和模块化训练组件为主，不把简化实现称为论文级或工业级复现。后续仍值得持续加强：标准离线 benchmark 数据接入、完整在线/离线算法对照实验、真实模型生成与 reward pipeline 的端到端编排、分布式训练、超参数 sweep 与消融测试。
+本仓库以教学实现和模块化训练组件为主，不把简化实现称为论文级或工业级复现。新增 A2C 端到端脚本示例会统一使用 rollout buffer、CSV 日志、独立评估环境与 checkpoint。后续仍值得持续加强：标准离线 benchmark 数据接入、完整在线/离线算法对照实验、真实模型生成与 reward pipeline 的端到端编排、分布式训练、超参数 sweep 与消融测试。
