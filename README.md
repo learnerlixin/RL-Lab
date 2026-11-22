@@ -83,7 +83,7 @@ BC 示例收集一个简单控制器生成的 CartPole 演示数据；IQL 示例
 
 ## Offline RL API
 
-`OfflineTransitionDataset` 将 observations、actions、rewards、next_observations、terminals 和 timeouts 统一存储，并支持 NPZ 加载/保存。真实 MDP 终止与时间限制截断分开记录，避免把 time-limit truncation 错误当作 terminal 阻断 bootstrap。
+`OfflineTransitionDataset` 将 observations、actions、rewards、next_observations、terminals 和 timeouts 统一存储，支持 NPZ 加载/保存及 D4RL-style mapping 导入。真实 MDP 终止与时间限制截断分开记录，避免把 time-limit truncation 错误当作 terminal 阻断 bootstrap。
 
 - BC：离散动作交叉熵、连续动作 MSE、统一 optimizer step。
 - IQL：连续动作高斯策略、双 Q、expectile value、target Q、advantage-weighted policy update。
